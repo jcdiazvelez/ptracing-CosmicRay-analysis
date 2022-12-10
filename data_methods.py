@@ -5,7 +5,7 @@ import healpy as hp
 from PathSegment import PathSegment
 
 
-def run_file(file, nside):
+def run_file(file, nside, energy_falloff=-2.7):
     print("Processing: " + file)
     data1 = np.load(file)
 
@@ -23,8 +23,10 @@ def run_file(file, nside):
             if p_last.status < 0:
                 break  # If particle failed, don't include it in data
 
-            data_array.append(hp.vec2pix(nside, p_first.px, p_first.py, p_first.pz) + 1)
-            data_array.append(-hp.vec2pix(nside, p_last.x, p_last.y, p_last.z) - 1)
+            weight = 1 / np.power(p_first.p, energy_falloff)
+
+            data_array.append((hp.vec2pix(nside, p_first.px, p_first.py, p_first.pz) + 1, weight))
+            data_array.append((-hp.vec2pix(nside, p_last.x, p_last.y, p_last.z) - 1, weight))
 
         except:
             sys.excepthook(*sys.exc_info())
