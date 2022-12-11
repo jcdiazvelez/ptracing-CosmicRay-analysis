@@ -89,11 +89,11 @@ for i in range(len(data_arrays)):
 
 hp.visufunc.mollview(initial_map)
 plt.title('Initial Momenta')
-plt.savefig('../figs/initial')
+plt.savefig('./figs/initial')
 
 hp.visufunc.mollview(final_map)
 plt.title('Final Positions')
-plt.savefig('../figs/final')
+plt.savefig('./figs/final')
 
 pool_input = []
 for i in range(nfiles):
@@ -109,4 +109,4 @@ for i in range(len(reweighed_array)):
 
 hp.visufunc.mollview(reweighed_map)
 plt.title('Reweighed Initial Momenta')
-plt.savefig('../figs/reweighed')
+plt.savefig('./figs/reweighed')
