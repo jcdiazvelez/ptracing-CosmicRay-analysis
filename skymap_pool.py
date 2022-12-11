@@ -41,7 +41,6 @@ args = parser.parse_args()
 
 args_dict = vars(args)
 
-
 start_time = time.time()
 
 directory = args.fieldtype
@@ -66,7 +65,7 @@ print("processing", nfiles, " files")
 
 nside = args.nside
 
-pool = Pool(processes=4)  # start 4 worker processes
+pool = Pool(processes=16)  # start 4 worker processes
 
 pool_input = []
 for i in range(nfiles):
@@ -81,19 +80,11 @@ npix = hp.nside2npix(nside)
 initial_map = np.zeros(npix, dtype=np.double)
 final_map = np.zeros(npix, dtype=np.double)
 
-for i in range(len(data_arrays)):
-    if data_arrays[i] < 0:
-        final_map[-data_arrays[i] - 1] += 1
+for element in data_arrays:
+    if element < 0:
+        final_map[-element - 1] += 1
     else:
-        initial_map[data_arrays[i] - 1] += 1
-
-hp.visufunc.mollview(initial_map)
-plt.title('Initial Momenta')
-plt.savefig('./figs/initial')
-
-hp.visufunc.mollview(final_map)
-plt.title('Final Positions')
-plt.savefig('./figs/final')
+        initial_map[element - 1] += 1
 
 pool_input = []
 for i in range(nfiles):
@@ -107,6 +98,12 @@ reweighed_map = np.zeros(npix, dtype=np.double)
 for i in range(len(reweighed_array)):
     reweighed_map[reweighed_array[i][0]] += 1.0 / reweighed_array[i][1]
 
-hp.visufunc.mollview(reweighed_map)
-plt.title('Reweighed Initial Momenta')
-plt.savefig('./figs/reweighed')
+prefix = args.prefix % args_dict
+
+output_name = args.outdir + '/' + prefix
+print("saving %s" % output_name)
+np.savez_compressed(output_name,
+                    initial=initial_map,
+                    final=final_map,
+                    reweighed=reweighed_map
+                    )

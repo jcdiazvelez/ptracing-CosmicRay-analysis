@@ -13,7 +13,7 @@ def run_file(file, nside):
 
     for key in data1:
         try:
-            datum = data1[key]  # Get track
+            datum = data1[key]                      # Get track
 
             if len(datum) < 3:
                 break
@@ -21,7 +21,7 @@ def run_file(file, nside):
             p_first = PathSegment(datum[0])
             p_last = PathSegment(datum[-2])
             if p_last.status < 0:
-                break  # If particle failed, don't include it in data
+                break                               # If particle failed, don't include it in data
 
             data_array.append(hp.vec2pix(nside, p_first.px, p_first.py, p_first.pz) + 1)
             data_array.append(-hp.vec2pix(nside, p_last.x, p_last.y, p_last.z) - 1)
@@ -41,20 +41,20 @@ def reweigh_file(file, nside, weights, energy_falloff=2.7):
 
     for key in data1:
         try:
-            datum = data1[key]  # Get track
+            datum = data1[key]                                           # Get track
 
             if len(datum) < 3:
                 break
 
-            p_first = PathSegment(datum[0])
+            p_first = PathSegment(datum[0])                              # Get first and last positions of particle
             p_last = PathSegment(datum[-2])
             if p_last.status < 0:
-                break  # If particle failed, don't include it in data
+                break                                                    # If particle failed, don't include it in data
 
-            weight = np.power(p_first.p / 1000, energy_falloff - 1)
+            weight = np.power(p_first.p / 1000, energy_falloff - 1)      # Weight by energy
 
-            pix = hp.vec2pix(nside, p_first.px, p_first.py, p_first.pz)
-            fin_pix = hp.vec2pix(nside, p_last.x, p_last.y, p_last.z)
+            pix = hp.vec2pix(nside, p_first.px, p_first.py, p_first.pz)  # Initial direction of particle
+            fin_pix = hp.vec2pix(nside, p_last.x, p_last.y, p_last.z)    # Final position of particle
             data_array.append((pix, weights[fin_pix] * weight))
 
         except:
