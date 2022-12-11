@@ -82,10 +82,10 @@ initial_map = np.zeros(npix, dtype=np.double)
 final_map = np.zeros(npix, dtype=np.double)
 
 for i in range(len(data_arrays)):
-    if data_arrays[i][0] < 0:
-        final_map[-data_arrays[i][0] - 1] += data_arrays[i][1]
+    if data_arrays[i] < 0:
+        final_map[-data_arrays[i] - 1] += data_arrays[i]
     else:
-        initial_map[data_arrays[i][0] - 1] += data_arrays[i][1]
+        initial_map[data_arrays[i] - 1] += data_arrays[i]
 
 hp.visufunc.mollview(initial_map)
 plt.title('Initial Momenta')
