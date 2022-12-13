@@ -86,7 +86,9 @@ for item in direction_data:
 num_bins = 10
 bin_sizes = np.logspace(p_min, p_max, num_bins)
 
-initial_maps, final_maps, reweighed_maps = np.zeros((num_bins, npix))
+initial_maps = np.zeros((num_bins, npix))
+final_maps = np.zeros((num_bins, npix))
+reweighed_maps = np.zeros((num_bins, npix))
 
 for item in direction_data:
     initial_pixel = item[0]
