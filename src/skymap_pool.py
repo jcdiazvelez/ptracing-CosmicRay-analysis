@@ -89,6 +89,8 @@ print(p_max)
 num_bins = 10
 bin_sizes = np.logspace(p_min, p_max, num_bins)
 
+print(bin_sizes)
+
 initial_maps = np.zeros((num_bins, npix))
 final_maps = np.zeros((num_bins, npix))
 reweighed_maps = np.zeros((num_bins, npix))
@@ -105,6 +107,9 @@ for item in direction_data:
             break
     initial_maps[p_bin][initial_pixel] += 1
     final_maps[p_bin][final_pixel] += 1
+
+print(initial_maps)
+print(final_maps)
 
 pool_input = []
 
