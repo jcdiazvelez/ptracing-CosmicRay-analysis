@@ -130,3 +130,5 @@ dmypy.json
 
 # All numpy data
 *.npz
+
+/src/weigh_energy.py
