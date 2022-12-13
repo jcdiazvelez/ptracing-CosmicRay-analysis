@@ -83,6 +83,9 @@ for item in direction_data:
     elif item[2] > p_max:
         p_max = item[2]
 
+print(p_min)
+print(p_max)
+
 num_bins = 10
 bin_sizes = np.logspace(p_min, p_max, num_bins)
 
