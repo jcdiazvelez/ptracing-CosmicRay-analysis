@@ -61,7 +61,7 @@ def perform_weighting(file, nside, final_maps, bin_sizes):
             final_pixel = hp.vec2pix(nside, p_last.x, p_last.y, p_last.z)
             weight = 1.0 / final_maps[p_bin][final_pixel]
 
-            data_array.append(initial_pixel, weight, p_bin)
+            data_array.append((initial_pixel, weight, p_bin))
 
         except:
             sys.excepthook(*sys.exc_info())
