@@ -83,13 +83,8 @@ for item in direction_data:
     elif item[2] > p_max:
         p_max = item[2]
 
-print(p_min)
-print(p_max)
-
 num_bins = 10
 bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
-
-print(bin_sizes)
 
 initial_maps = np.zeros((num_bins, npix))
 final_maps = np.zeros((num_bins, npix))
@@ -107,9 +102,6 @@ for item in direction_data:
             break
     initial_maps[p_bin][initial_pixel] += 1
     final_maps[p_bin][final_pixel] += 1
-
-print(initial_maps)
-print(final_maps)
 
 pool_input = []
 
@@ -133,5 +125,6 @@ print("saving %s" % output_name)
 np.savez_compressed(output_name,
                     initial=initial_maps,
                     final=final_maps,
-                    reweighed=reweighed_maps
+                    reweighed=reweighed_maps,
+                    bins=bin_sizes
                     )
