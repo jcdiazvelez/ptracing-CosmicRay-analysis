@@ -105,8 +105,8 @@ for item in direction_data:
 
 pool_input = []
 
-for file in files:
-    pool_input.append((file, nside, final_maps, bin_sizes))
+for i in range(nfiles):
+    pool_input.append((files[i], nside, final_maps, bin_sizes))
 
 reweighed_data = pool.starmap(perform_weighting, pool_input)
 reweighed_data = [ent for sublist in reweighed_data for ent in sublist]
