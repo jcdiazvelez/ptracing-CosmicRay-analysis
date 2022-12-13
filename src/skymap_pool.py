@@ -15,6 +15,7 @@ from argparse import ArgumentParser
 
 from data_methods import create_position_maps, perform_weighting
 
+# Parser for reading command line arguments
 parser = ArgumentParser()
 parser.add_argument("-j", "--jobnumber", type=int, default=0,
                     help="Index of job (for selecting subset of files)")
@@ -38,58 +39,61 @@ parser.add_argument("--prefix", type=str, default="a_crossings_%(fieldtype)s_ene
                     help="output directory")
 
 args = parser.parse_args()
-
 args_dict = vars(args)
 
-start_time = time.time()
-
-directory = args.fieldtype
-if args.fieldtype == "helio":
-    directory = "heliosphere"
-direction = args.direction + "track"
-
+# File names for particle data
 filename = "%s*.npz" % args.fieldtype
 path = args.path + "/" + filename
 
 print(path)
 
 files = sorted(glob.glob(path))
-nfiles = len(files)
+n_files = len(files)
 
-print(nfiles, "total files")
+print(n_files, "total files")
 
 if args.nfiles:
-    nfiles = args.nfiles
+    n_files = args.nfiles
 
-print("processing", nfiles, " files")
+print("processing", n_files, " files")
 
+# Set healpy nside
 nside = args.nside
 npix = hp.nside2npix(nside)
 
-pool = Pool(processes=16)  # start 4 worker processes
+# Use 16 worker processes
+pool = Pool(processes=16)
 
+# Create pool input for direction data map
 pool_input = []
-for i in range(nfiles):
+for i in range(n_files):
     pool_input.append((files[i], nside))
 
+# Generate and flatten direction data
 direction_data = pool.starmap(create_position_maps, pool_input)
 direction_data = [ent for sublist in direction_data for ent in sublist]
 
+# Create energy binning scheme
 p_max, p_min = 0, sys.maxsize
 
+
+# Determine max and min energy
 for item in direction_data:
     if item[2] < p_min:
         p_min = item[2]
     elif item[2] > p_max:
         p_max = item[2]
 
+# Create bins
 num_bins = 10
 bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
 
+# Create a sky map for each bin, for weighing by energy
 initial_maps = np.zeros((num_bins, npix))
 final_maps = np.zeros((num_bins, npix))
 reweighed_maps = np.zeros((num_bins, npix))
 
+# Populate initial and final maps
 for item in direction_data:
     initial_pixel = item[0]
     final_pixel = item[1]
@@ -105,12 +109,15 @@ for item in direction_data:
 
 pool_input = []
 
-for i in range(nfiles):
+# Create pool input for reweighing
+for i in range(n_files):
     pool_input.append((files[i], nside, final_maps, bin_sizes))
 
+# Generate and flatten reweighed data
 reweighed_data = pool.starmap(perform_weighting, pool_input)
 reweighed_data = [ent for sublist in reweighed_data for ent in sublist]
 
+# Populate reweighed maps
 for item in reweighed_data:
     pixel = item[0]
     positional_weight = item[1]
@@ -118,6 +125,8 @@ for item in reweighed_data:
 
     reweighed_maps[p_bin][pixel] += positional_weight
 
+
+# Save maps and bins
 prefix = args.prefix % args_dict
 
 output_name = '../data/' + prefix
