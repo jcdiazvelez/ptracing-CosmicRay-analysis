@@ -87,7 +87,7 @@ print(p_min)
 print(p_max)
 
 num_bins = 10
-bin_sizes = np.logspace(np.log10(p_min), np.log10(p_max), num_bins)
+bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
 
 print(bin_sizes)
 
