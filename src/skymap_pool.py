@@ -13,7 +13,7 @@ from multiprocessing import Pool, TimeoutError
 
 from argparse import ArgumentParser
 
-from data_methods import create_position_maps, perform_weighting
+from data_methods import create_position_maps
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
@@ -107,24 +107,18 @@ for item in direction_data:
     initial_maps[p_bin][initial_pixel] += 1
     final_maps[p_bin][final_pixel] += 1
 
-pool_input = []
-
-# Create pool input for reweighing
-for i in range(n_files):
-    pool_input.append((files[i], nside, final_maps, bin_sizes))
-
-# Generate and flatten reweighed data
-reweighed_data = pool.starmap(perform_weighting, pool_input)
-reweighed_data = [ent for sublist in reweighed_data for ent in sublist]
-
-# Populate reweighed maps
-for item in reweighed_data:
-    pixel = item[0]
-    positional_weight = item[1]
-    p_bin = item[2]
-
-    reweighed_maps[p_bin][pixel] += positional_weight
-
+for item in direction_data:
+    initial_pixel = item[0]
+    final_pixel = item[1]
+    p = item[2]
+    p_bin = 0
+    for i in range(num_bins):
+        if p >= bin_sizes[i]:
+            p_bin += 1
+        else:
+            break
+    weight = final_maps[p_bin][final_pixel]
+    reweighed_maps[p_bin][initial_pixel] += 1 / weight
 
 # Save maps and bins
 prefix = args.prefix % args_dict
