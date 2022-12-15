@@ -2,6 +2,8 @@ import numpy as np
 import healpy as hp
 from matplotlib import pyplot as plt
 
+from data_methods import apply_rotation
+
 
 # Power law pdf for a given index. In our case g = -1
 def powerlaw_pdf(x, x_min, x_max, g):

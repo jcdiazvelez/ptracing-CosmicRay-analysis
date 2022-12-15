@@ -61,13 +61,18 @@ print("processing", n_files, " files")
 nside = args.nside
 npix = hp.nside2npix(nside)
 
+# Matrix for converting from heliospheric to equatorial coordinates
+equatorial_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.122321361599999998],
+                               [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
+                               [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
+
 # Use 16 worker processes
 pool = Pool(processes=16)
 
 # Create pool input for direction data map
 pool_input = []
 for i in range(n_files):
-    pool_input.append((files[i], nside))
+    pool_input.append((files[i], nside, equatorial_matrix))
 
 # Generate and flatten direction data
 direction_data = pool.starmap(create_position_maps, pool_input)
@@ -75,7 +80,6 @@ direction_data = [ent for sublist in direction_data for ent in sublist]
 
 # Create energy binning scheme
 p_max, p_min = 0, sys.maxsize
-
 
 # Determine max and min energy
 for item in direction_data:
