@@ -18,7 +18,7 @@ def weight_powerlaw(x, x_min, x_max, g, power):
 
 
 # Read in data file
-filename = "a_crossings_c_energy_.npz"
+filename = "55000.npz"
 path = "../data/" + filename
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
@@ -48,11 +48,13 @@ for key in data:
     elif key == 'bins':
         bin_sizes = data[key]
 
+
 # Calculate weights of energy bins
 bin_weights = []
 for i in range(len(bin_sizes) - 1):
     bin_midpoint = 10 ** ((np.log10(bin_sizes[i]) + np.log10(bin_sizes[i+1])) / 2.0)
     bin_weights.append(weight_powerlaw(bin_midpoint, bin_sizes[0], bin_sizes[-1], g, power))
+
 
 # Initialise combined maps
 initial = np.zeros(np.shape(initial_maps[0]))
@@ -64,16 +66,15 @@ bin_midpoints = []
 
 # Populate combined maps
 for i in range(1, len(initial_maps) - 1):
-    initial += initial_maps[i] * bin_weights[i]
-    final += final_maps[i] * bin_weights[i]
-    reweighed += reweighed_maps[i] * bin_weights[i]
-    map_weights.append(sum(reweighed_maps[i] * bin_weights[i]))
+    initial += initial_maps[i] # * bin_weights[i]
+    final += final_maps[i] # * bin_weights[i]
+    reweighed += reweighed_maps[i] # * bin_weights[i]
+    map_weights.append(sum(reweighed_maps[i])) # * bin_weights[i]))
 
     bin_midpoint = 10 ** ((np.log10(bin_sizes[i]) + np.log10(bin_sizes[i+1])) / 2.0)
     bin_energy = bin_midpoint * m_p * c * c / (e * 10 ** 12)
     bin_midpoints.append(bin_energy)
     bin_energy = int(bin_energy)
-
 
     # Create figures
     hp.visufunc.mollview(initial_maps[i])

@@ -28,6 +28,9 @@ def create_position_maps(file, nside, matrix):
             if p_last.r < 50000:
                 break
 
+            if p_last.p == 0:
+                break
+
             # Remove particles which failed
             if p_last.status < 0:
                 break
