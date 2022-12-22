@@ -22,7 +22,11 @@ def create_position_maps(file, nside, matrix):
 
             # Get state of particle initially and at r = 330 au
             p_first = PathSegment(datum[0])
-            p_last = PathSegment(datum[-2])
+            p_last = PathSegment(datum[-1])
+
+            # Use only particles which terminate at 55000 au
+            if p_last.r < 50000:
+                break
 
             # Remove particles which failed
             if p_last.status < 0:
@@ -41,3 +45,16 @@ def create_position_maps(file, nside, matrix):
             break
 
     return data_array
+
+
+def powerlaw_pdf(x, x_min, x_max, g):
+    x_min_g, x_max_g = x_min ** (g + 1.), x_max ** (g + 1.)
+    if g == -1.0:
+        return x ** g / np.log(x_max / x_min)
+    else:
+        return (g + 1.) / (x_max_g - x_min_g) * x ** g
+
+
+# Weighting scheme for energy bins
+def weight_powerlaw(x, x_min, x_max, g, power):
+    return x ** g / powerlaw_pdf(x, x_min, x_max, power)

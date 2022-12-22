@@ -13,7 +13,7 @@ from multiprocessing import Pool, TimeoutError
 
 from argparse import ArgumentParser
 
-from data_methods import create_position_maps
+from data_methods import create_position_maps, weight_powerlaw
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
@@ -97,6 +97,10 @@ initial_maps = np.zeros((num_bins, npix))
 final_maps = np.zeros((num_bins, npix))
 reweighed_maps = np.zeros((num_bins, npix))
 
+# Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
+g = -2.7
+power = -1
+
 # Populate initial and final maps
 for item in direction_data:
     initial_pixel = item[0]
@@ -108,8 +112,8 @@ for item in direction_data:
             p_bin += 1
         else:
             break
-    initial_maps[p_bin][initial_pixel] += 1
-    final_maps[p_bin][final_pixel] += 1
+    initial_maps[p_bin][initial_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
+    final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
 
 for item in direction_data:
     initial_pixel = item[0]

@@ -2,8 +2,6 @@ import numpy as np
 import healpy as hp
 from matplotlib import pyplot as plt
 
-from data_methods import apply_rotation
-
 
 # Power law pdf for a given index. In our case g = -1
 def powerlaw_pdf(x, x_min, x_max, g):
@@ -27,6 +25,11 @@ path = "../data/" + filename
 g = -2.7
 power = -1
 
+# Physical constants for scaling momentum
+c = 299792458
+e = 1.60217663 * 10 ** (-19)
+m_p = 1.67262192 * 10 ** (-27)
+
 data = np.load(path)
 
 initial_maps = 0
@@ -48,30 +51,65 @@ for key in data:
 # Calculate weights of energy bins
 bin_weights = []
 for i in range(len(bin_sizes) - 1):
-    bin_energy = 10 ** ((np.log10(bin_sizes[i]) + np.log10(bin_sizes[i+1])) / 2.0)
-    bin_weights.append(weight_powerlaw(bin_energy, bin_sizes[0], bin_sizes[-1], g, power))
-    # bin_weights.append(1)
+    bin_midpoint = 10 ** ((np.log10(bin_sizes[i]) + np.log10(bin_sizes[i+1])) / 2.0)
+    bin_weights.append(weight_powerlaw(bin_midpoint, bin_sizes[0], bin_sizes[-1], g, power))
 
 # Initialise combined maps
 initial = np.zeros(np.shape(initial_maps[0]))
 final = np.zeros(np.shape(final_maps[0]))
 reweighed = np.zeros(np.shape(reweighed_maps[0]))
 
+map_weights = []
+bin_midpoints = []
+
 # Populate combined maps
-for i in range(len(initial_maps) - 1):
+for i in range(1, len(initial_maps) - 1):
     initial += initial_maps[i] * bin_weights[i]
     final += final_maps[i] * bin_weights[i]
     reweighed += reweighed_maps[i] * bin_weights[i]
+    map_weights.append(sum(reweighed_maps[i] * bin_weights[i]))
+
+    bin_midpoint = 10 ** ((np.log10(bin_sizes[i]) + np.log10(bin_sizes[i+1])) / 2.0)
+    bin_energy = bin_midpoint * m_p * c * c / (e * 10 ** 12)
+    bin_midpoints.append(bin_energy)
+    bin_energy = int(bin_energy)
+
+
+    # Create figures
+    hp.visufunc.mollview(initial_maps[i])
+    hp.graticule(coord='E')
+    plt.title('Initial Momenta for E = ' + str(bin_energy) + ' TeV')
+    plt.savefig('../figs/initial-' + str(bin_energy) + 'TeV')
+
+    hp.visufunc.mollview(final_maps[i])
+    hp.graticule(coord='E')
+    plt.title('Final Momenta for E = ' + str(bin_energy) + ' TeV')
+    plt.savefig('../figs/final-' + str(bin_energy) + 'TeV')
+
+    hp.visufunc.mollview(reweighed_maps[i])
+    hp.graticule(coord='E')
+    plt.title('Reweighed Initial Momenta for E = ' + str(bin_energy) + ' TeV')
+    plt.savefig('../figs/reweighed-' + str(bin_energy) + 'TeV')
 
 # Create figures
 hp.visufunc.mollview(initial)
-plt.title('Initial Momenta')
+hp.graticule(coord='E')
+plt.title('Initial Momenta (Combined)')
 plt.savefig('../figs/initial')
 
 hp.visufunc.mollview(final)
-plt.title('Final Positions')
+hp.graticule(coord='E')
+plt.title('Final Momenta (Combined)')
 plt.savefig('../figs/final')
 
 hp.visufunc.mollview(reweighed)
-plt.title('Reweighed Initial Momenta')
+hp.graticule(coord='E')
+plt.title('Reweighed Initial Momenta (Combined)')
 plt.savefig('../figs/reweighed')
+
+plt.clf()
+plt.loglog(bin_midpoints, map_weights, label='Weighted Simulation Distribution')
+plt.loglog(bin_midpoints, 10 * np.power(bin_midpoints, g+1), label='Physically Observed (Offset by 10^1)')
+plt.title('Check of particle weighting scheme')
+plt.legend()
+plt.savefig('../figs/weighting-check')
