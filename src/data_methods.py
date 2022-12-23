@@ -20,6 +20,9 @@ def create_position_maps(file, nside, matrix, radius):
             # Get particle track
             datum = data1[key]
 
+            if len(datum) < 3:
+                break
+
             # Get state of particle initially
             p_first = PathSegment(datum[0])
             p_last = None
