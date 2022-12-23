@@ -5,7 +5,11 @@ import healpy as hp
 from PathSegment import PathSegment
 
 
-def create_position_maps(file, nside, matrix):
+# Pass radius to function
+# Last position is the latest instant where the particle passes outwards through that radius
+
+
+def create_position_maps(file, nside, matrix, radius):
     print("Processing: " + file)
     data1 = np.load(file)
 
@@ -16,24 +20,17 @@ def create_position_maps(file, nside, matrix):
             # Get particle track
             datum = data1[key]
 
-            # Remove particles with insufficient crossings
-            if len(datum) < 3:
-                break
-
-            # Get state of particle initially and at r = 330 au
+            # Get state of particle initially
             p_first = PathSegment(datum[0])
-            p_last = PathSegment(datum[-1])
+            p_last = None
 
-            # Use only particles which terminate at 55000 au
-            if p_last.r < 50000:
-                break
-
-            if p_last.p == 0:
-                break
-
-            # Remove particles which failed
-            if p_last.status < 0:
-                break
+            for i in range(len(datum) - 1, 1):
+                p_i = PathSegment(datum[i])
+                print(p_i.r)
+                p_j = PathSegment(datum[i-1])
+                if p_i.r > radius > p_j.r:
+                    p_last = p_i
+                    break
 
             initial_momentum = hp.rotator.rotateVector(matrix, p_first.px, p_first.py, p_first.pz)
             final_momentum = hp.rotator.rotateVector(matrix, p_last.px, p_last.py, p_last.pz)
