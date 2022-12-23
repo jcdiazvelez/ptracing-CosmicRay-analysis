@@ -13,7 +13,7 @@ from multiprocessing import Pool, TimeoutError
 
 from argparse import ArgumentParser
 
-from data_methods import create_position_maps, weight_powerlaw
+from data_methods import create_position_maps, weight_powerlaw, cos_dipole
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
@@ -98,7 +98,7 @@ bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bin
 # Create a sky map for each bin, for weighing by energy
 initial_maps = np.zeros((num_bins, npix))
 final_maps = np.zeros((num_bins, npix))
-reweighed_maps = np.zeros((num_bins, npix))
+reweighed_maps = np.zeros((num_bins - 1, npix))
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
 g = -2.7
@@ -119,8 +119,8 @@ for item in direction_data:
     final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
 
 for i in range(num_bins):
-    initial_maps[i] *= 1 / np.average(initial_maps[i])
-    final_maps[i] *= 1 / np.average(final_maps[i])
+    for j in range(npix):
+        final_maps[i][j] *= cos_dipole(nside, j)
 
 for item in direction_data:
     initial_pixel = item[0]
@@ -134,7 +134,7 @@ for item in direction_data:
             break
     direction_weight = final_maps[p_bin][final_pixel]
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
-    reweighed_maps[p_bin][initial_pixel] += momentum_weight / direction_weight
+    reweighed_maps[p_bin][initial_pixel] += momentum_weight * momentum_weight / direction_weight
 
 # Save maps and bins
 prefix = args.prefix % args_dict

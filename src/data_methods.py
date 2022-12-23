@@ -63,3 +63,9 @@ def powerlaw_pdf(x, x_min, x_max, g):
 # Weighting scheme for energy bins
 def weight_powerlaw(x, x_min, x_max, g, power):
     return x ** g / powerlaw_pdf(x, x_min, x_max, power)
+
+
+def cos_dipole(nside, pix, bx=-1.737776, by=-1.287260, bz=2.345265):
+    pxf, pyf, pzf = hp.pix2vec(nside, pix)
+    return -(pxf * bx + pyf * by + pzf * bz) / (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / np.sqrt(
+        bx * bx + by * by + bz * bz)
