@@ -27,8 +27,6 @@ def create_position_maps(file, nside, matrix, radius):
             p_first = PathSegment(datum[0])
             p_last = None
 
-            print(datum)
-
             for i in range(len(datum) - 1, 1):
                 p_i = PathSegment(datum[i])
                 print(p_i.r)
