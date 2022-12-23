@@ -37,6 +37,8 @@ parser.add_argument("-N", "--nside", type=int, default="30",
                     help="plot resolution")
 parser.add_argument("--prefix", type=str, default="a_crossings_%(fieldtype)s_energy_",
                     help="output directory")
+parser.add_argument("-r", "--radius", type=int, default="50000",
+                    help="termination radius")
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -65,7 +67,7 @@ npix = hp.nside2npix(nside)
 equatorial_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.122321361599999998],
                                [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
                                [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
-radius = 200
+radius = args.radius
 
 # Use 16 worker processes
 pool = Pool(processes=16)
