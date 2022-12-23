@@ -118,9 +118,9 @@ for item in direction_data:
     initial_maps[p_bin][initial_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
 
-#for i in range(num_bins):
-    #for j in range(npix):
-        #final_maps[i][j] *= cos_dipole(nside, j)
+for i in range(num_bins):
+    for j in range(npix):
+        final_maps[i][j] *= cos_dipole(nside, j)
 
 for item in direction_data:
     initial_pixel = item[0]
