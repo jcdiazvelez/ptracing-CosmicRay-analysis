@@ -37,6 +37,9 @@ def create_position_maps(file, nside, matrix, radius):
                     p_last = p_i
                     break
 
+            if p_last == None:
+                break
+
             initial_momentum = hp.rotator.rotateVector(matrix, p_first.px, p_first.py, p_first.pz)
             final_momentum = hp.rotator.rotateVector(matrix, p_last.px, p_last.py, p_last.pz)
 
