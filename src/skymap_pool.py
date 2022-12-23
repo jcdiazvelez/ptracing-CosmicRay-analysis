@@ -98,7 +98,7 @@ bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bin
 # Create a sky map for each bin, for weighing by energy
 initial_maps = np.zeros((num_bins, npix))
 final_maps = np.zeros((num_bins, npix))
-reweighed_maps = np.zeros((num_bins - 1, npix))
+reweighed_maps = np.zeros((num_bins, npix))
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
 g = -2.7
