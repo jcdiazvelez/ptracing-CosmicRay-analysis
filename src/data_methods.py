@@ -29,7 +29,7 @@ def create_position_maps(file, nside, matrix, radius):
 
             for i in range(len(datum) - 1, 1, -1):
                 p_i = PathSegment(datum[i])
-                p_j = PathSegment(datum[i-1])
+                p_j = PathSegment(datum[i - 1])
                 if p_i.r > radius > p_j.r:
                     p_last = p_i
                     break

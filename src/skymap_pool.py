@@ -118,6 +118,10 @@ for item in direction_data:
     initial_maps[p_bin][initial_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
 
+for i in range(num_bins):
+    initial_maps[i] *= 1 / np.average(initial_maps[i])
+    final_maps[i] *= 1 / np.average(final_maps[i])
+
 for item in direction_data:
     initial_pixel = item[0]
     final_pixel = item[1]
@@ -128,8 +132,9 @@ for item in direction_data:
             p_bin += 1
         else:
             break
-    weight = final_maps[p_bin][final_pixel]
-    reweighed_maps[p_bin][initial_pixel] += 1 / weight
+    direction_weight = final_maps[p_bin][final_pixel]
+    momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
+    reweighed_maps[p_bin][initial_pixel] += momentum_weight / direction_weight
 
 # Save maps and bins
 prefix = args.prefix % args_dict
