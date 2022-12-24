@@ -20,22 +20,22 @@ def create_position_maps(file, nside, matrix, radius):
             # Get particle track
             datum = data1[key]
 
-            if len(datum) < 3:
-                break
+            if len(datum) < 3 or PathSegment(datum[-1]).status == -1:
+                raise Exception("Invalid trace")
 
             # Get state of particle initially
             p_first = PathSegment(datum[0])
             p_last = None
 
-            for i in range(len(datum) - 1, 1, -1):
+            for i in range(len(datum)-1, 1, -1):
                 p_i = PathSegment(datum[i])
-                p_j = PathSegment(datum[i - 1])
+                p_j = PathSegment(datum[i-1])
                 if p_i.r > radius > p_j.r:
                     p_last = p_i
                     break
 
             if p_last == None:
-                break
+                raise Exception("Invalid trace")
 
             initial_momentum = hp.rotator.rotateVector(matrix, p_first.px, p_first.py, p_first.pz)
             final_momentum = hp.rotator.rotateVector(matrix, p_last.px, p_last.py, p_last.pz)
@@ -46,8 +46,7 @@ def create_position_maps(file, nside, matrix, radius):
             data_array.append((initial_pixel, final_pixel, p_last.p))
 
         except:
-            sys.excepthook(*sys.exc_info())
-            break
+            continue
 
     return data_array
 
