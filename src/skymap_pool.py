@@ -63,13 +63,6 @@ print("processing", n_files, " files")
 nside = args.nside
 npix = hp.nside2npix(nside)
 
-# Matrix for converting from heliospheric to equatorial coordinates
-equatorial_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.122321361599999998],
-                               [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
-                               [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
-
-map_matrix = np.matmul(np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]]), equatorial_matrix)
-
 radius = args.radius
 
 # Use 16 worker processes
@@ -78,7 +71,7 @@ pool = Pool(processes=16)
 # Create pool input for direction data map
 pool_input = []
 for i in range(n_files):
-    pool_input.append((files[i], nside, map_matrix, radius))
+    pool_input.append((files[i], nside, radius))
 
 # Generate and flatten direction data
 direction_data = pool.starmap(create_position_maps, pool_input)
@@ -131,9 +124,10 @@ for item in direction_data:
             p_bin += 1
         else:
             break
-    direction_weight = final_maps[p_bin][final_pixel] * (1 + 0.001 * cos_dipole_f(nside, final_pixel, map_matrix))
+    dipole_weight = 1 + 0.9 * cos_dipole_f(nside, final_pixel)
+    direction_weight = final_maps[p_bin][final_pixel]
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
-    reweighed_maps[p_bin][initial_pixel] += momentum_weight * momentum_weight / direction_weight
+    reweighed_maps[p_bin][initial_pixel] += momentum_weight * momentum_weight * dipole_weight / direction_weight
 
 # Save maps and bins
 prefix = args.prefix % args_dict

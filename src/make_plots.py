@@ -16,6 +16,13 @@ c = 299792458
 e = 1.60217663 * 10 ** (-19)
 m_p = 1.67262192 * 10 ** (-27)
 
+# Matrix for converting from heliospheric to equatorial coordinates
+equatorial_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.122321361599999998],
+                               [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
+                               [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
+
+map_matrix = np.matmul(np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]]), equatorial_matrix)
+
 data = np.load(path)
 
 initial_maps = 0

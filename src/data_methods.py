@@ -9,7 +9,7 @@ from PathSegment import PathSegment
 # Last position is the latest instant where the particle passes outwards through that radius
 
 
-def create_position_maps(file, nside, matrix, radius):
+def create_position_maps(file, nside, radius):
     print("Processing: " + file)
     data1 = np.load(file)
 
@@ -37,12 +37,9 @@ def create_position_maps(file, nside, matrix, radius):
             if p_last is None:
                 raise Exception("Invalid trace")
 
-            initial_momentum = hp.rotator.rotateVector(matrix, p_first.px, p_first.py, p_first.pz)
-            final_momentum = hp.rotator.rotateVector(matrix, p_last.px, p_last.py, p_last.pz)
-
             # Determine initial and final pixels, returning these and the particle's momentum
-            initial_pixel = hp.vec2pix(nside, initial_momentum[0], initial_momentum[1], initial_momentum[2])
-            final_pixel = hp.vec2pix(nside, final_momentum[0], final_momentum[1], final_momentum[2])
+            initial_pixel = hp.vec2pix(nside, p_first.px, p_first.py, p_first.pz)
+            final_pixel = hp.vec2pix(nside, p_last.px, p_last.py, p_last.pz)
             data_array.append((initial_pixel, final_pixel, p_last.p))
 
         except:
@@ -51,13 +48,8 @@ def create_position_maps(file, nside, matrix, radius):
     return data_array
 
 
-def cos_dipole_f(nside, pix, matrix, bx=-1.737776, by=-1.287260, bz=2.345265):
+def cos_dipole_f(nside, pix, bx=-1.737776, by=-1.287260, bz=2.345265):
     pxf, pyf, pzf = hp.pix2vec(nside, pix)
-    b_vec = np.array([bx, by, bz])
-    b_vec = np.matmul(matrix, b_vec)
-    bx = b_vec[0]
-    by = b_vec[1]
-    bz = b_vec[2]
     return -(pxf * bx + pyf * by + pzf * bz) / (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / np.sqrt(
         bx * bx + by * by + bz * bz)
 
