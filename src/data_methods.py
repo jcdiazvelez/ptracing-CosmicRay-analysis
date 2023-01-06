@@ -27,14 +27,14 @@ def create_position_maps(file, nside, matrix, radius):
             p_first = PathSegment(datum[0])
             p_last = None
 
-            for i in range(len(datum)-1, 1, -1):
+            for i in range(len(datum) - 1, 1, -1):
                 p_i = PathSegment(datum[i])
-                p_j = PathSegment(datum[i-1])
+                p_j = PathSegment(datum[i - 1])
                 if p_i.r > radius > p_j.r:
                     p_last = p_i
                     break
 
-            if p_last == None:
+            if p_last is None:
                 raise Exception("Invalid trace")
 
             initial_momentum = hp.rotator.rotateVector(matrix, p_first.px, p_first.py, p_first.pz)
@@ -51,6 +51,12 @@ def create_position_maps(file, nside, matrix, radius):
     return data_array
 
 
+def cos_dipole_f(nside, pix, bx=-1.737776, by=-1.287260, bz=2.345265):
+    pxf, pyf, pzf = hp.pix2vec(nside, pix)
+    return -(pxf * bx + pyf * by + pzf * bz) / (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / np.sqrt(
+        bx * bx + by * by + bz * bz)
+
+
 def powerlaw_pdf(x, x_min, x_max, g):
     x_min_g, x_max_g = x_min ** (g + 1.), x_max ** (g + 1.)
     if g == -1.0:
@@ -62,9 +68,3 @@ def powerlaw_pdf(x, x_min, x_max, g):
 # Weighting scheme for energy bins
 def weight_powerlaw(x, x_min, x_max, g, power):
     return x ** g / powerlaw_pdf(x, x_min, x_max, power)
-
-
-def cos_dipole(nside, pix, bx=-1.737776, by=-1.287260, bz=2.345265):
-    pxf, pyf, pzf = hp.pix2vec(nside, pix)
-    return -(pxf * bx + pyf * by + pzf * bz) / (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / np.sqrt(
-        bx * bx + by * by + bz * bz)

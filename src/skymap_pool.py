@@ -13,7 +13,7 @@ from multiprocessing import Pool, TimeoutError
 
 from argparse import ArgumentParser
 
-from data_methods import create_position_maps, weight_powerlaw, cos_dipole
+from data_methods import create_position_maps, weight_powerlaw, cos_dipole_f
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
@@ -128,7 +128,7 @@ for item in direction_data:
             p_bin += 1
         else:
             break
-    direction_weight = final_maps[p_bin][final_pixel]
+    direction_weight = final_maps[p_bin][final_pixel] * (1 + 0.001 * cos_dipole_f(nside, final_pixel))
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     reweighed_maps[p_bin][initial_pixel] += momentum_weight * momentum_weight / direction_weight
 
