@@ -51,8 +51,13 @@ def create_position_maps(file, nside, matrix, radius):
     return data_array
 
 
-def cos_dipole_f(nside, pix, bx=-1.737776, by=-1.287260, bz=2.345265):
+def cos_dipole_f(nside, pix, matrix, bx=-1.737776, by=-1.287260, bz=2.345265):
     pxf, pyf, pzf = hp.pix2vec(nside, pix)
+    b_vec = np.array([bx, by, bz])
+    b_vec = np.matmul(matrix, b_vec)
+    bx = b_vec[0]
+    by = b_vec[1]
+    bz = b_vec[2]
     return -(pxf * bx + pyf * by + pzf * bz) / (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / np.sqrt(
         bx * bx + by * by + bz * bz)
 

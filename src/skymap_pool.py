@@ -70,8 +70,6 @@ equatorial_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.1
 
 map_matrix = np.matmul(np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]]), equatorial_matrix)
 
-ism_field = np.matmul(map_matrix, np.array([1.737776, 1.287260, 2.345265]))
-
 radius = args.radius
 
 # Use 16 worker processes
@@ -133,10 +131,7 @@ for item in direction_data:
             p_bin += 1
         else:
             break
-    direction_weight = final_maps[p_bin][final_pixel] * (1 + 0.001 * cos_dipole_f(nside, final_pixel,
-                                                                                  ism_field[0],
-                                                                                  ism_field[1],
-                                                                                  ism_field[2]))
+    direction_weight = final_maps[p_bin][final_pixel] * (1 + 0.001 * cos_dipole_f(nside, final_pixel, map_matrix))
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     reweighed_maps[p_bin][initial_pixel] += momentum_weight * momentum_weight / direction_weight
 
