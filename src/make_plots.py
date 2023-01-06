@@ -73,7 +73,7 @@ for i in range(1, len(initial_maps) - 1):
     plt.title('Final Momenta for E = ' + str(bin_energy) + ' TeV')
     plt.savefig('../figs/figs_helio/final-' + str(bin_energy) + 'TeV')
 
-    hp.visufunc.mollview(reweighed_maps[i])
+    hp.visufunc.mollview(hp.remove_monopole(reweighed_maps[i]))
     hp.graticule(coord='E')
     plt.title('Reweighed Initial Momenta for E = ' + str(bin_energy) + ' TeV')
     plt.savefig('../figs/figs_helio/reweighed-' + str(bin_energy) + 'TeV')
