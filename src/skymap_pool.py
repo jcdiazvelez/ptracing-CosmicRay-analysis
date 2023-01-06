@@ -68,7 +68,7 @@ equatorial_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.1
                                [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
                                [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
 
-map_matrix = np.matmul(np.matrix([[0, 1, 0], [-1, 0, 0], [0, 0, 1]]), equatorial_matrix)
+map_matrix = np.matmul(np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]]), equatorial_matrix)
 
 radius = args.radius
 

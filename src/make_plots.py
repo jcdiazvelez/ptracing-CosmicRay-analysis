@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from data_methods import weight_powerlaw
 
 # Read in data file
-filename = "h.npz"
+filename = "dipole.npz"
 path = "../data/" + filename
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
