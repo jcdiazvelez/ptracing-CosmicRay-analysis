@@ -67,6 +67,9 @@ npix = hp.nside2npix(nside)
 equatorial_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.122321361599999998],
                                [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
                                [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
+
+map_matrix = np.matmul(np.matrix([[0, 1, 0], [-1, 0, 0], [0, 0, 1]]), equatorial_matrix)
+
 radius = args.radius
 
 # Use 16 worker processes
@@ -75,7 +78,7 @@ pool = Pool(processes=16)
 # Create pool input for direction data map
 pool_input = []
 for i in range(n_files):
-    pool_input.append((files[i], nside, equatorial_matrix, radius))
+    pool_input.append((files[i], nside, map_matrix, radius))
 
 # Generate and flatten direction data
 direction_data = pool.starmap(create_position_maps, pool_input)

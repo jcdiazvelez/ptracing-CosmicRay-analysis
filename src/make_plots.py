@@ -1,21 +1,7 @@
 import numpy as np
 import healpy as hp
 from matplotlib import pyplot as plt
-
-
-# Power law pdf for a given index. In our case g = -1
-def powerlaw_pdf(x, x_min, x_max, g):
-    x_min_g, x_max_g = x_min ** (g + 1.), x_max ** (g + 1.)
-    if g == -1.0:
-        return x ** g / np.log(x_max / x_min)
-    else:
-        return (g + 1.) / (x_max_g - x_min_g) * x ** g
-
-
-# Weighting scheme for energy bins
-def weight_powerlaw(x, x_min, x_max, g, power):
-    return x ** g / powerlaw_pdf(x, x_min, x_max, power)
-
+from data_methods import weight_powerlaw
 
 # Read in data file
 filename = "h.npz"
