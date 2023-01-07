@@ -5,10 +5,6 @@ import healpy as hp
 from PathSegment import PathSegment
 
 
-# Pass radius to function
-# Last position is the latest instant where the particle passes outwards through that radius
-
-
 def create_position_maps(file, nside, radius):
     print("Processing: " + file)
     data1 = np.load(file)
@@ -48,6 +44,7 @@ def create_position_maps(file, nside, radius):
     return data_array
 
 
+# For applying a dipole to the final distribution of momenta
 def cos_dipole_f(nside, pix, bx=-1.737776, by=-1.287260, bz=2.345265):
     pxf, pyf, pzf = hp.pix2vec(nside, pix)
     return -(pxf * bx + pyf * by + pzf * bz) / (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / np.sqrt(
@@ -65,3 +62,16 @@ def powerlaw_pdf(x, x_min, x_max, g):
 # Weighting scheme for energy bins
 def weight_powerlaw(x, x_min, x_max, g, power):
     return x ** g / powerlaw_pdf(x, x_min, x_max, power)
+
+
+# For rotating sky maps to equatorial coordinates
+def rotate_map(old_map, matrix):
+    npix = len(old_map)
+    nside = hp.npix2nside(npix)
+    new_map = np.zeros(npix)
+    for i in range(npix):
+        theta_old, phi_old = hp.pix2ang(nside, i)
+        theta_new, phi_new = hp.rotator.rotateDirection(matrix, theta_old, phi_old)
+        new_pix = hp.ang2pix(nside, theta_new, phi_new)
+        new_map[new_pix] = old_map[i]
+    return new_map

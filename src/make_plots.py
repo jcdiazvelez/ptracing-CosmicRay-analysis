@@ -1,11 +1,22 @@
 import numpy as np
 import healpy as hp
 from matplotlib import pyplot as plt
-from data_methods import weight_powerlaw
+from data_methods import weight_powerlaw, rotate_map
+
+
+def create_fig(sky_map, title, path, energy):
+    hp.visufunc.mollview(sky_map)
+    hp.graticule(coord='E')
+    plt.title(title + ' for E = ' + str(energy) + ' TeV')
+    plt.savefig(path + title + '-' + str(energy) + 'TeV')
+
 
 # Read in data file
-filename = "dipole.npz"
+filename = "g.npz"
 path = "../data/" + filename
+
+# Path for outputting figures
+fig_path = '../figs/figs_helio/'
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
 g = -2.7
@@ -47,6 +58,9 @@ bin_weights = []
 for i in range(len(bin_sizes) - 1):
     bin_midpoint = 10 ** ((np.log10(bin_sizes[i]) + np.log10(bin_sizes[i+1])) / 2.0)
     bin_weights.append(weight_powerlaw(bin_midpoint, bin_sizes[0], bin_sizes[-1], g, power))
+    initial_maps[i] = rotate_map(initial_maps[i], map_matrix)
+    final_maps[i] = rotate_map(final_maps[i], map_matrix)
+    reweighed_maps[i] = rotate_map(reweighed_maps[i], map_matrix)
 
 
 # Initialise combined maps
@@ -70,20 +84,9 @@ for i in range(1, len(initial_maps) - 1):
     bin_energy = int(bin_energy)
 
     # Create figures
-    hp.visufunc.mollview(initial_maps[i])
-    hp.graticule(coord='E')
-    plt.title('Initial Momenta for E = ' + str(bin_energy) + ' TeV')
-    plt.savefig('../figs/figs_helio/initial-' + str(bin_energy) + 'TeV')
-
-    hp.visufunc.mollview(final_maps[i])
-    hp.graticule(coord='E')
-    plt.title('Final Momenta for E = ' + str(bin_energy) + ' TeV')
-    plt.savefig('../figs/figs_helio/final-' + str(bin_energy) + 'TeV')
-
-    hp.visufunc.mollview(hp.remove_monopole(reweighed_maps[i]))
-    hp.graticule(coord='E')
-    plt.title('Reweighed Initial Momenta for E = ' + str(bin_energy) + ' TeV')
-    plt.savefig('../figs/figs_helio/reweighed-' + str(bin_energy) + 'TeV')
+    create_fig(initial_maps[i], 'Initial Momenta', fig_path, bin_energy)
+    create_fig(final_maps[i], 'Final Momenta', fig_path, bin_energy)
+    create_fig(reweighed_maps[i], 'Reweighed Momenta', fig_path, bin_energy)
 
 # Create figures
 hp.visufunc.mollview(initial)
@@ -103,7 +106,10 @@ plt.savefig('../figs/figs_helio/reweighed')
 
 plt.clf()
 plt.loglog(bin_midpoints, map_weights, label='Weighted Simulation Distribution')
-plt.loglog(bin_midpoints, 10 * np.power(bin_midpoints, g+1), label='Physically Observed (Offset by 10^1)')
+plt.loglog(bin_midpoints, np.power(bin_midpoints, g+1), label='Physically Observed')
 plt.title('Check of particle weighting scheme')
 plt.legend()
 plt.savefig('../figs/figs_helio/weighting-check')
+
+
+

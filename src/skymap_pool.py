@@ -114,6 +114,7 @@ for item in direction_data:
     initial_maps[p_bin][initial_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
 
+# Go back through the data and reweigh the initial map
 for item in direction_data:
     initial_pixel = item[0]
     final_pixel = item[1]
@@ -124,14 +125,13 @@ for item in direction_data:
             p_bin += 1
         else:
             break
-    dipole_weight = 1 + 0.9 * cos_dipole_f(nside, final_pixel)
+    dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel)
     direction_weight = final_maps[p_bin][final_pixel]
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     reweighed_maps[p_bin][initial_pixel] += momentum_weight * momentum_weight * dipole_weight / direction_weight
 
 # Save maps and bins
 prefix = args.prefix % args_dict
-
 output_name = '../data/' + prefix
 print("saving %s" % output_name)
 np.savez_compressed(output_name,
