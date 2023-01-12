@@ -65,13 +65,16 @@ def weight_powerlaw(x, x_min, x_max, g, power):
 
 
 # For rotating sky maps to equatorial coordinates
-def rotate_map(old_map, matrix):
+def rotate_map(old_map, coord_matrix, map_matrix):
     npix = len(old_map)
     nside = hp.npix2nside(npix)
     new_map = np.zeros(npix)
+    r = hp.Rotator(coord=['C', 'E'])
     for i in range(npix):
-        theta_old, phi_old = hp.pix2ang(nside, i)
-        theta_new, phi_new = hp.rotator.rotateDirection(matrix, theta_old, phi_old)
-        new_pix = hp.ang2pix(nside, theta_new, phi_new)
-        new_map[new_pix] = old_map[i]
+        theta, phi = hp.pix2ang(nside, i)
+        old_theta, old_phi = hp.rotator.rotateDirection(np.linalg.inv(map_matrix), theta, phi)
+        old_theta, old_phi = r(old_theta, old_phi)
+        old_theta, old_phi = hp.rotator.rotateDirection(np.linalg.inv(coord_matrix), old_theta, old_phi)
+        old_pix = hp.ang2pix(nside, old_theta, old_phi)
+        new_map[i] += old_map[old_pix]
     return new_map
