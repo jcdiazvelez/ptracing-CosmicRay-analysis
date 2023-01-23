@@ -13,11 +13,11 @@ def create_fig(sky_map, title, path, energy):
 
 
 # Read in data file
-filename = "new.npz"
+filename = "hybrid.npz"
 path = "../data/" + filename
 
 # Path for outputting figures
-fig_path = '../figs/figs_helio/'
+fig_path = '../figs/hybrid/'
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
 g = -2.7
@@ -63,7 +63,6 @@ for i in range(len(bin_sizes) - 1):
     final_maps[i] = rotate_map(final_maps[i], equatorial_matrix, map_matrix)
     reweighed_maps[i] = rotate_map(reweighed_maps[i], equatorial_matrix, map_matrix)
 
-
 # Initialise combined maps
 initial = np.zeros(np.shape(initial_maps[0]))
 final = np.zeros(np.shape(final_maps[0]))
@@ -85,32 +84,32 @@ for i in range(1, len(initial_maps) - 1):
     bin_energy = int(bin_energy)
 
     # Create figures
-    create_fig(hp.remove_monopole(initial_maps[i]), 'Initial Momenta', fig_path, bin_energy)
-    create_fig(hp.remove_monopole(final_maps[i]), 'Final Momenta', fig_path, bin_energy)
-    create_fig(hp.remove_monopole(reweighed_maps[i]), 'Reweighed Momenta', fig_path, bin_energy)
+    create_fig(initial_maps[i], 'Initial Momenta', fig_path, bin_energy)
+    create_fig(final_maps[i], 'Final Momenta', fig_path, bin_energy)
+    create_fig(reweighed_maps[i], 'Reweighed Momenta', fig_path, bin_energy)
 
 # Create figures
 hp.visufunc.mollview(initial)
 hp.graticule(coord='E')
 plt.title('Initial Momenta (Combined)')
-plt.savefig('../figs/figs_helio/initial')
+plt.savefig(fig_path + 'initial')
 
 hp.visufunc.mollview(final)
 hp.graticule(coord='E')
 plt.title('Final Momenta (Combined)')
-plt.savefig('../figs/figs_helio/final')
+plt.savefig(fig_path + 'final')
 
 hp.visufunc.mollview(reweighed)
 hp.graticule(coord='E')
 plt.title('Reweighed Initial Momenta (Combined)')
-plt.savefig('../figs/figs_helio/reweighed')
+plt.savefig(fig_path + 'reweighed')
 
 plt.clf()
 plt.loglog(bin_midpoints, map_weights, label='Weighted Simulation Distribution')
 plt.loglog(bin_midpoints, np.power(bin_midpoints, g+1), label='Physically Observed')
 plt.title('Check of particle weighting scheme')
 plt.legend()
-plt.savefig('../figs/figs_helio/weighting-check')
+plt.savefig(fig_path + 'weighting-check')
 
 
 

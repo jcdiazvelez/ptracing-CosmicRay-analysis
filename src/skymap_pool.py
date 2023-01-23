@@ -88,7 +88,7 @@ for item in direction_data:
         p_max = item[2]
 
 # Create bins
-num_bins = 10
+num_bins = 25
 bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
 
 # Create a sky map for each bin, for weighing by energy
@@ -126,9 +126,9 @@ for item in direction_data:
         else:
             break
     dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel)
-    direction_weight = final_maps[p_bin][final_pixel]
+    direction_weight = final_maps[p_bin][final_pixel] / np.average(final_maps[p_bin])
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
-    reweighed_maps[p_bin][initial_pixel] += momentum_weight * momentum_weight * dipole_weight / direction_weight
+    reweighed_maps[p_bin][initial_pixel] += momentum_weight * dipole_weight / direction_weight
 
 # Save maps and bins
 prefix = args.prefix % args_dict
