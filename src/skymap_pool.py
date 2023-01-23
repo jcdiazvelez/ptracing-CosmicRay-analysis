@@ -88,7 +88,7 @@ for item in direction_data:
         p_max = item[2]
 
 # Create bins
-num_bins = 25
+num_bins = 10
 bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
 
 # Create a sky map for each bin, for weighing by energy

@@ -8,16 +8,16 @@ def create_fig(sky_map, title, path, energy):
     hp.visufunc.mollview(sky_map)
     hp.graticule(coord='E')
     plt.set_cmap('coolwarm')
-    plt.title(title + ' for E = ' + str(energy) + ' TeV')
-    plt.savefig(path + title + '-' + str(energy) + 'TeV')
+    plt.title(title + ' for E = ' + str(energy) + ' GeV')
+    plt.savefig(path + title + '-' + str(energy) + 'GeV')
 
 
 # Read in data file
-filename = "hybrid.npz"
+filename = "hybrid-weight.npz"
 path = "../data/" + filename
 
 # Path for outputting figures
-fig_path = '../figs/hybrid/'
+fig_path = '../figs/cycle/'
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
 g = -2.7
@@ -81,7 +81,7 @@ for i in range(1, len(initial_maps) - 1):
     bin_midpoint = 10 ** ((np.log10(bin_sizes[i]) + np.log10(bin_sizes[i+1])) / 2.0)
     bin_energy = bin_midpoint * m_p * c * c / (e * 10 ** 12)
     bin_midpoints.append(bin_energy)
-    bin_energy = int(bin_energy)
+    bin_energy = int(1000 * bin_energy)
 
     # Create figures
     create_fig(initial_maps[i], 'Initial Momenta', fig_path, bin_energy)
