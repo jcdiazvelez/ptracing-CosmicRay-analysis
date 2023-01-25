@@ -111,8 +111,8 @@ for item in direction_data:
             p_bin += 1
         else:
             break
-    initial_maps[p_bin][initial_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
-    final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
+    initial_maps[p_bin][initial_pixel] += 1
+    final_maps[p_bin][final_pixel] += 1
 
 # Go back through the data and reweigh the initial map
 for item in direction_data:
@@ -128,7 +128,7 @@ for item in direction_data:
     dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel)
     direction_weight = final_maps[p_bin][final_pixel]
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
-    reweighed_maps[p_bin][initial_pixel] += momentum_weight * momentum_weight * dipole_weight / direction_weight
+    reweighed_maps[p_bin][initial_pixel] += momentum_weight * dipole_weight / direction_weight
 
 # Save maps and bins
 prefix = args.prefix % args_dict
