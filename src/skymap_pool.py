@@ -39,6 +39,8 @@ parser.add_argument("--prefix", type=str, default="a_crossings_%(fieldtype)s_ene
                     help="output directory")
 parser.add_argument("-r", "--radius", type=int, default="50000",
                     help="termination radius")
+parser.add_argument("-b", "--bins", type=int, default="10",
+                    help="number of energy bins")
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -88,7 +90,7 @@ for item in direction_data:
         p_max = item[2]
 
 # Create bins
-num_bins = 10
+num_bins = parser.bins
 bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
 
 # Create a sky map for each bin, for weighing by energy
@@ -131,7 +133,7 @@ for item in direction_data:
     reweighed_maps[p_bin][initial_pixel] += momentum_weight * dipole_weight / direction_weight
 
 # Save maps and bins
-prefix = args.prefix % args_dict
+prefix = args.prefix % args_dict + 'num_bins=' + num_bins + 'nside=' + nside
 output_name = '../data/' + prefix
 print("saving %s" % output_name)
 np.savez_compressed(output_name,
