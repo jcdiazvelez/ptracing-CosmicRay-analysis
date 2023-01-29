@@ -5,27 +5,29 @@ import healpy as hp
 from PathSegment import PathSegment
 
 
-def create_position_maps(file, nside, radius):
-    print("Processing: " + file)
-    data1 = np.load(file)
+# Process data files and populate initial and final sky maps
+def create_position_maps(filename, nside, radius):
+    print("Processing: " + filename)
+    file = np.load(filename)
 
     data_array = []
 
-    for key in data1:
+    for key in file:
         try:
             # Get particle track
-            datum = data1[key]
+            particle = file[key]
 
-            if len(datum) < 3 or PathSegment(datum[-1]).status == -1:
+            if len(particle) < 3 or PathSegment(particle[-1]).status == -1:
                 raise Exception("Invalid trace")
 
             # Get state of particle initially
-            p_first = PathSegment(datum[0])
+            p_first = PathSegment(particle[0])
             p_last = None
 
-            for i in range(len(datum) - 1, 1, -1):
-                p_i = PathSegment(datum[i])
-                p_j = PathSegment(datum[i - 1])
+            # Determine final state of particle
+            for i in range(len(particle) - 1, 1, -1):
+                p_i = PathSegment(particle[i])
+                p_j = PathSegment(particle[i - 1])
                 if p_i.r > radius > p_j.r:
                     p_last = p_i
                     break
@@ -51,12 +53,13 @@ def cos_dipole_f(nside, pix, bx=-1.737776, by=-1.287260, bz=2.345265):
         bx * bx + by * by + bz * bz)
 
 
-def powerlaw_pdf(x, x_min, x_max, g):
-    x_min_g, x_max_g = x_min ** (g + 1.), x_max ** (g + 1.)
-    if g == -1.0:
-        return x ** g / np.log(x_max / x_min)
+# Probability density function for power law functions
+def powerlaw_pdf(x, x_min, x_max, power):
+    x_min_g, x_max_g = x_min ** (power + 1.), x_max ** (power + 1.)
+    if power == -1.0:
+        return x ** power / np.log(x_max / x_min)
     else:
-        return (g + 1.) / (x_max_g - x_min_g) * x ** g
+        return (power + 1.) / (x_max_g - x_min_g) * x ** power
 
 
 # Weighting scheme for energy bins
@@ -70,11 +73,21 @@ def rotate_map(old_map, coord_matrix, map_matrix):
     nside = hp.npix2nside(npix)
     new_map = np.zeros(npix)
     r = hp.Rotator(coord=['C', 'E'])
+
+    # For each pixel in the new map, add the transformed pixel from the old map
     for i in range(npix):
         theta, phi = hp.pix2ang(nside, i)
+
+        # Apply transform from simulation to ecliptic coordinates
         old_theta, old_phi = hp.rotator.rotateDirection(np.linalg.inv(map_matrix), theta, phi)
+
+        # Appy transform from ecliptic to equatorial coordinates
         old_theta, old_phi = r(old_theta, old_phi)
+
+        # Apply transform to put GMT on rhs of maps
         old_theta, old_phi = hp.rotator.rotateDirection(np.linalg.inv(coord_matrix), old_theta, old_phi)
+
+        # Add appropriate pixel to new map
         old_pix = hp.ang2pix(nside, old_theta, old_phi)
         new_map[i] += old_map[old_pix]
     return new_map

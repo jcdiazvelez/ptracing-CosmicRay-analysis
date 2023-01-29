@@ -17,40 +17,35 @@ from data_methods import create_position_maps, weight_powerlaw, cos_dipole_f
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
-parser.add_argument("-j", "--jobnumber", type=int, default=0,
-                    help="Index of job (for selecting subset of files)")
 parser.add_argument("-n", "--nfiles", type=int, default=0,
                     help="Number of files per job (for selecting subset of files)")
-parser.add_argument("-f", "--fieldtype", type=str, default="uniform",
-                    help="Magnetic field type")
-parser.add_argument("-p", "--path", type=str,
-                    # default="/data/sim/solarmodel/ptracing/h5mdh/sets/",
-                    default="/data/sim/solarmodel/ptracing/jc/sets/backtrack3/",
+parser.add_argument("-p", "--path", type=str, default="../../data/h5hybrid-2/",
                     help="Path to data")
-parser.add_argument("-d", "--direction", type=str, default="back",
-                    help="direction of propagation")
-parser.add_argument("-s", "--subtract-first", default=False, action='store_true',
-                    help="direction of propagation")
-parser.add_argument("-o", "--outdir", type=str, default=".",
+parser.add_argument("-o", "--outdir", type=str, default="../data/",
                     help="output directory")
 parser.add_argument("-N", "--nside", type=int, default="30",
                     help="plot resolution")
-parser.add_argument("--prefix", type=str, default="a_crossings_%(fieldtype)s_energy_",
+parser.add_argument("--prefix", type=str, default="",
                     help="output directory")
 parser.add_argument("-r", "--radius", type=int, default="50000",
                     help="termination radius")
 parser.add_argument("-b", "--bins", type=int, default="10",
                     help="number of energy bins")
+parser.add_argument("-g", "--phys_index", type=float, default="-2.7",
+                    help="power law index for physical cosmic ray distribution")
+parser.add_argument("-P", "--model_index", type=float, default="-1.0",
+                    help="power law index for modelled cosmic ray distribution")
 
 args = parser.parse_args()
 args_dict = vars(args)
 
 # File names for particle data
-filename = "%s*.npz" % args.fieldtype
+filename = "*.npz"
 path = args.path + "/" + filename
 
 print(path)
 
+# Prepare file names for processing
 files = sorted(glob.glob(path))
 n_files = len(files)
 
@@ -61,10 +56,9 @@ if args.nfiles:
 
 print("processing", n_files, " files")
 
-# Set healpy nside
+# Set healpy nside and termination radius
 nside = args.nside
 npix = hp.nside2npix(nside)
-
 radius = args.radius
 
 # Use 16 worker processes
@@ -90,7 +84,7 @@ for item in direction_data:
         p_max = item[2]
 
 # Create bins
-num_bins = parser.bins
+num_bins = args.bins
 bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
 
 # Create a sky map for each bin, for weighing by energy
@@ -99,8 +93,8 @@ final_maps = np.zeros((num_bins, npix))
 reweighed_maps = np.zeros((num_bins, npix))
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
-g = -2.7
-power = -1
+g = args.phys_index
+power = args.model_index
 
 # Populate initial and final maps
 for item in direction_data:
@@ -133,12 +127,14 @@ for item in direction_data:
     reweighed_maps[p_bin][initial_pixel] += momentum_weight * dipole_weight / direction_weight
 
 # Save maps and bins
-prefix = args.prefix % args_dict + 'num_bins=' + num_bins + 'nside=' + nside
-output_name = '../data/' + prefix
+prefix = args.prefix % args_dict + 'nside=' + str(nside) + 'num_bins=' + str(num_bins)
+output_name = args.outdir + prefix
 print("saving %s" % output_name)
 np.savez_compressed(output_name,
                     initial=initial_maps,
                     final=final_maps,
                     reweighed=reweighed_maps,
-                    bins=bin_sizes
+                    bins=bin_sizes,
+                    phys_index=g,
+                    model_index=power
                     )
