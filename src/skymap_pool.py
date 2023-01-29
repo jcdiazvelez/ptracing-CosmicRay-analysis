@@ -19,7 +19,7 @@ from data_methods import create_position_maps, weight_powerlaw, cos_dipole_f
 parser = ArgumentParser()
 parser.add_argument("-n", "--nfiles", type=int, default=0,
                     help="Number of files per job (for selecting subset of files)")
-parser.add_argument("-p", "--path", type=str, default="../../data/h5hybrid-2/",
+parser.add_argument("-p", "--path", type=str, default="../../data/newsets/h5hybrid-2",
                     help="Path to data")
 parser.add_argument("-o", "--outdir", type=str, default="../data/",
                     help="output directory")
