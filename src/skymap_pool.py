@@ -91,6 +91,7 @@ bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bin
 initial_maps = np.zeros((num_bins, npix))
 final_maps = np.zeros((num_bins, npix))
 reweighed_maps = np.zeros((num_bins, npix))
+reweighed_particles = [[] for i in range(npix)]
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
 g = args.phys_index
@@ -110,7 +111,7 @@ for item in direction_data:
     initial_maps[p_bin][initial_pixel] += 1
     final_maps[p_bin][final_pixel] += 1
 
-# Go back through the data and reweigh the initial map
+# Go back through the data and reweigh the initial map. Save the individual particle data fot statistical testing
 for item in direction_data:
     initial_pixel = item[0]
     final_pixel = item[1]
@@ -125,6 +126,9 @@ for item in direction_data:
     direction_weight = final_maps[p_bin][final_pixel]
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     reweighed_maps[p_bin][initial_pixel] += momentum_weight * dipole_weight / direction_weight
+    reweighed_particles[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight])
+
+reweighed_particles = np.array(reweighed_particles)
 
 # Save maps and bins
 prefix = args.prefix % args_dict + 'nside=' + str(nside) + 'num_bins=' + str(num_bins)
@@ -134,6 +138,7 @@ np.savez_compressed(output_name,
                     initial=initial_maps,
                     final=final_maps,
                     reweighed=reweighed_maps,
+                    particles=reweighed_particles,
                     bins=bin_sizes,
                     phys_index=g,
                     model_index=power
