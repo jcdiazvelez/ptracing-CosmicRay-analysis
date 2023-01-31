@@ -35,6 +35,8 @@ parser.add_argument("-g", "--phys_index", type=float, default="-2.7",
                     help="power law index for physical cosmic ray distribution")
 parser.add_argument("-P", "--model_index", type=float, default="-1.0",
                     help="power law index for modelled cosmic ray distribution")
+parser.add_argument("-s", "--store", type=int, default="0",
+                    help="store particle data")
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -126,7 +128,8 @@ for item in direction_data:
     direction_weight = final_maps[p_bin][final_pixel]
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     reweighed_maps[p_bin][initial_pixel] += momentum_weight * dipole_weight / direction_weight
-    reweighed_particles[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight])
+    if args.store:
+        reweighed_particles[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight])
 
 reweighed_particles = np.array(reweighed_particles)
 
