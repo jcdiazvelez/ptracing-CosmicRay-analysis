@@ -1,3 +1,5 @@
+#!/usr/local/bin/python
+
 import numpy as np
 import healpy as hp
 from scipy.stats import distributions
