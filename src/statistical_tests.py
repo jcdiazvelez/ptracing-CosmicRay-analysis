@@ -45,12 +45,17 @@ def get_pixel_distribution(pixel):
 
 
 def get_sky_distribution(pixel_list):
-    particle_array = np.array([get_pixel_distribution(pixel) for pixel in pixel_list])
-    return np.reshape(particle_array, (2, -1), 'F')
+    energies = []
+    weights = []
+    for pixel in pixel_list:
+        distribution = get_pixel_distribution(pixel)
+        energies += distribution[0].tolist()
+        weights += distribution[1].tolist()
+    return np.array([energies, weights])
 
 
 # Read in data file
-filename = "nside=16num_bins=20particles=True.npz"
+filename = "toy.npz"
 path = "../data/" + filename
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
