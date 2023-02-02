@@ -25,8 +25,6 @@ parser.add_argument("-o", "--outdir", type=str, default="../data/",
                     help="output directory")
 parser.add_argument("-N", "--nside", type=int, default="30",
                     help="plot resolution")
-parser.add_argument("--prefix", type=str, default="",
-                    help="output directory")
 parser.add_argument("-r", "--radius", type=int, default="50000",
                     help="termination radius")
 parser.add_argument("-b", "--bins", type=int, default="10",

@@ -1,10 +1,28 @@
 #!/usr/local/bin/python
 
+import sys
 import numpy as np
 import healpy as hp
 from scipy.stats import distributions
 from matplotlib import pyplot as plt
 from data_methods import rotate_map
+from argparse import ArgumentParser
+
+# Parser for reading command line arguments
+parser = ArgumentParser()
+parser.add_argument("-l", "--lower", type=float, default=0,
+                    help="Lower energy bound (in TeV")
+parser.add_argument("-u", "--upper", type=float, default=10**8,
+                    help="Lower energy bound (in TeV")
+parser.add_argument("-p", "--path", type=str, default='../data/',
+                    help="Path to data file")
+parser.add_argument("-f", "--file", type=str, default='toy.npz')
+parser.add_argument("-o", "--outdir", type=str, default='../figs/',
+                    help="Output directory for figures")
+
+
+args = parser.parse_args()
+args_dict = vars(args)
 
 
 # Kolmogorov-Smirnov test for two weighted distributions
@@ -65,8 +83,7 @@ def impose_energy_range(distribution, min_energy, max_energy):
 
 
 # Read in data file
-filename = "toy.npz"
-path = "../data/" + filename
+path = args.path + args.file
 
 # Physical cosmic ray distribution goes with E^(-2.7), ours goes with E^(-1)
 g = 2.7
@@ -120,5 +137,8 @@ hp.visufunc.mollview(p_values,
                      unit="p")
 hp.graticule()
 
-plt.savefig('P-Values')
-plt.clf()
+# Save map
+prefix = 'nside=' + str(hp.npix2nside(npix)) + 'lower=' + str(int(args.lower)) + 'upper=' + str(int(args.upper))
+output_name = args.outdir + prefix
+
+plt.savefig(output_name)
