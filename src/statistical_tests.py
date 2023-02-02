@@ -112,17 +112,17 @@ for key in data:
 
 npix = len(particles)
 
-one_tev = 1 / (m_p * c * c / (e * 10 ** 12))
-ten_tev = 10 / (m_p * c * c / (e * 10 ** 12))
+lower = args.lower / (m_p * c * c / (e * 10 ** 12))
+upper = args.upper / (m_p * c * c / (e * 10 ** 12))
 
 sky_distribution = get_sky_distribution(particles)
-sky_distribution = impose_energy_range(sky_distribution, one_tev, ten_tev)
+sky_distribution = impose_energy_range(sky_distribution, lower, upper)
 
 p_values = np.zeros(npix)
 for i in range(npix):
     print(i)
     pixel_distribution = get_pixel_distribution(particles[i])
-    pixel_distribution = impose_energy_range(pixel_distribution, one_tev, ten_tev)
+    pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
     p_values[i] = ks_weighted(pixel_distribution[0], sky_distribution[0],
                               pixel_distribution[1], sky_distribution[1])[1]
 
