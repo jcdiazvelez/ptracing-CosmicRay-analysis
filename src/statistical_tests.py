@@ -15,6 +15,7 @@ def ks_weighted(data1, data2, wei1, wei2, alternative='two-sided'):
     data2 = data2[ix2]
     wei1 = wei1[ix1]
     wei2 = wei2[ix2]
+
     combined = np.concatenate([data1, data2])
     c_wei1 = np.hstack([0, np.cumsum(wei1) / sum(wei1)])
     c_wei2 = np.hstack([0, np.cumsum(wei2) / sum(wei2)])
@@ -25,7 +26,7 @@ def ks_weighted(data1, data2, wei1, wei2, alternative='two-sided'):
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     m, n = sorted([float(n1), float(n2)], reverse=True)
-    en = m * n / (m + n)
+    en = np.sqrt(m * n / (m + n))
     if alternative == 'two-sided':
         prob = distributions.kstwo.sf(d, np.round(en))
     else:
@@ -44,6 +45,7 @@ def get_pixel_distribution(pixel):
     return np.array([energies, weights])
 
 
+# Get an average distribution across the whole sky
 def get_sky_distribution(pixel_list):
     energies = []
     weights = []
@@ -52,6 +54,14 @@ def get_sky_distribution(pixel_list):
         energies += distribution[0].tolist()
         weights += distribution[1].tolist()
     return np.array([energies, weights])
+
+
+# Impose a fixed energy range on a distribution
+def impose_energy_range(distribution, min_energy, max_energy):
+    energies = distribution[0]
+    weights = distribution[1]
+    indices = np.where(np.logical_and(energies >= min_energy, energies <= max_energy))
+    return np.array([energies[indices], weights[indices]])
 
 
 # Read in data file
@@ -85,12 +95,17 @@ for key in data:
 
 npix = len(particles)
 
+one_tev = 1 / (m_p * c * c / (e * 10 ** 12))
+ten_tev = 10 / (m_p * c * c / (e * 10 ** 12))
+
 sky_distribution = get_sky_distribution(particles)
+sky_distribution = impose_energy_range(sky_distribution, one_tev, ten_tev)
 
 p_values = np.zeros(npix)
 for i in range(npix):
     print(i)
     pixel_distribution = get_pixel_distribution(particles[i])
+    pixel_distribution = impose_energy_range(pixel_distribution, one_tev, ten_tev)
     p_values[i] = ks_weighted(pixel_distribution[0], sky_distribution[0],
                               pixel_distribution[1], sky_distribution[1])[1]
 
@@ -103,8 +118,6 @@ p_values_smoothed = hp.smoothing(p_values, fwhm=np.radians(3.))
 hp.visufunc.mollview(p_values,
                      title="P Values",
                      unit="p")
-#    min=0,
-#    max=0.3)
 hp.graticule()
 
 plt.savefig('P-Values')
