@@ -146,7 +146,8 @@ hp.visufunc.mollview(p_values,
 hp.graticule()
 
 # Save map
-prefix = 'nside=' + str(hp.npix2nside(npix)) + 'lower=' + str(int(args.lower)) + 'upper=' + str(int(args.upper))
+prefix = 'nside=' + str(hp.npix2nside(npix)) + 'upper=' + str(int(args.upper))
+prefix += 'lower=' + str(int(args.lower)) + 'width=' + str(int(args.width))
 output_name = args.outdir + prefix
 
 plt.savefig(output_name)
