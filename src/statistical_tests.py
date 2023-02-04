@@ -12,14 +12,15 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("-l", "--lower", type=float, default=0,
                     help="Lower energy bound (in TeV")
-parser.add_argument("-u", "--upper", type=float, default=10**8,
+parser.add_argument("-u", "--upper", type=float, default=10 ** 8,
                     help="Lower energy bound (in TeV")
+parser.add_argument("-w", "--width", type=int, default=1,
+                    help="Width of declination band in pixels")
 parser.add_argument("-p", "--path", type=str, default='../data/',
                     help="Path to data file")
 parser.add_argument("-f", "--file", type=str, default='toy.npz')
 parser.add_argument("-o", "--outdir", type=str, default='../figs/',
                     help="Output directory for figures")
-
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -74,6 +75,14 @@ def get_sky_distribution(pixel_list):
     return np.array([energies, weights])
 
 
+# Get the pixel distribution of particles within a declination strip of the chosen pixel
+def get_strip_distribution(pixel_number, pixel_list, nside, num_pixels):
+    theta, phi = hp.pix2ang(nside, pixel_number)
+    d_theta = np.sqrt(hp.nside2pixarea(nside))
+    strip = hp.query_strip(nside, theta - num_pixels * d_theta, theta + num_pixels * d_theta)
+    return get_sky_distribution(pixel_list[strip])
+
+
 # Impose a fixed energy range on a distribution
 def impose_energy_range(distribution, min_energy, max_energy):
     energies = distribution[0]
@@ -111,20 +120,19 @@ for key in data:
         particles = data[key]
 
 npix = len(particles)
+nside = hp.npix2nside(npix)
 
 lower = args.lower / (m_p * c * c / (e * 10 ** 12))
 upper = args.upper / (m_p * c * c / (e * 10 ** 12))
 
-sky_distribution = get_sky_distribution(particles)
-sky_distribution = impose_energy_range(sky_distribution, lower, upper)
-
 p_values = np.zeros(npix)
 for i in range(npix):
-    print(i)
+    strip_distribution = get_strip_distribution(i, particles, nside, args.width)
+    strip_distribution = impose_energy_range(strip_distribution, lower, upper)
     pixel_distribution = get_pixel_distribution(particles[i])
     pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
-    p_values[i] = ks_weighted(pixel_distribution[0], sky_distribution[0],
-                              pixel_distribution[1], sky_distribution[1])[1]
+    p_values[i] = ks_weighted(pixel_distribution[0], strip_distribution[0],
+                              pixel_distribution[1], strip_distribution[1])[1]
 
 p_values = rotate_map(p_values, equatorial_matrix, map_matrix)
 
