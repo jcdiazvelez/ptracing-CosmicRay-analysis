@@ -38,7 +38,7 @@ def create_position_maps(filename, nside, radius):
             # Determine initial and final pixels, returning these and the particle's momentum
             initial_pixel = hp.vec2pix(nside, p_first.px, p_first.py, p_first.pz)
             final_pixel = hp.vec2pix(nside, p_last.px, p_last.py, p_last.pz)
-            data_array.append((initial_pixel, final_pixel, p_last.p))
+            data_array.append((initial_pixel, final_pixel, p_last.p, p_last.time))
 
         except:
             continue

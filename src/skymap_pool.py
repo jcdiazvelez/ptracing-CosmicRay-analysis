@@ -116,6 +116,7 @@ for item in direction_data:
     initial_pixel = item[0]
     final_pixel = item[1]
     p = item[2]
+    t = item[3]
     p_bin = 0
     for i in range(num_bins):
         if p >= bin_sizes[i]:
@@ -127,7 +128,7 @@ for item in direction_data:
     momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], g, power)
     reweighed_maps[p_bin][initial_pixel] += momentum_weight * dipole_weight / direction_weight
     if args.store:
-        reweighed_particles[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight])
+        reweighed_particles[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
 
 reweighed_particles = np.array(reweighed_particles)
 
