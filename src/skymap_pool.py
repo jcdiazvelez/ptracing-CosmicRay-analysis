@@ -62,7 +62,7 @@ npix = hp.nside2npix(nside)
 radius = args.radius
 
 # Use 16 worker processes
-pool = Pool(processes=16)
+pool = Pool(processes=12)
 
 # Create pool input for direction data map
 pool_input = []
@@ -132,7 +132,7 @@ for item in direction_data:
 reweighed_particles = np.array(reweighed_particles)
 
 # Save maps and bins
-prefix = args.prefix % args_dict + 'nside=' + str(nside) + 'num_bins=' + str(num_bins)
+prefix = 'nside=' + str(nside) + 'num_bins=' + str(num_bins)
 output_name = args.outdir + prefix
 print("saving %s" % output_name)
 np.savez_compressed(output_name,
