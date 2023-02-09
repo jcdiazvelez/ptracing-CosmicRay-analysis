@@ -6,7 +6,7 @@ from PathSegment import PathSegment
 
 
 # Process data files and populate initial and final sky maps
-def create_position_maps(filename, nside, radius):
+def process_particle_data(filename, nside, radius):
     print("Processing: " + filename)
     file = np.load(filename)
 
@@ -68,7 +68,11 @@ def weight_powerlaw(x, x_min, x_max, g, power):
 
 
 # For rotating sky maps to equatorial coordinates
-def rotate_map(old_map, coord_matrix, map_matrix):
+def rotate_map(old_map):
+    coord_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.122321361599999998],
+                               [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
+                               [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
+    map_matrix = np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
     npix = len(old_map)
     nside = hp.npix2nside(npix)
     new_map = np.zeros(npix)
@@ -90,4 +94,24 @@ def rotate_map(old_map, coord_matrix, map_matrix):
         # Add appropriate pixel to new map
         old_pix = hp.ang2pix(nside, old_theta, old_phi)
         new_map[i] += old_map[old_pix]
+
     return new_map
+
+
+# Sort particles into energy bins
+def bin_particles(particles, binning):
+    return 0
+
+
+# Create sky map of reweighed momenta
+def create_reweighed_sky_maps(binned_particles):
+    reweighed_maps = np.zeros(len(binned_particles))
+
+    return reweighed_maps
+
+
+# Create sky map of the average time of particles to propagate out of the system
+def create_time_maps(binned_particles):
+    timed_maps = np.zeros(len(binned_particles))
+
+    return timed_maps
