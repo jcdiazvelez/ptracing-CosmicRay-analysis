@@ -70,8 +70,8 @@ def weight_powerlaw(x, x_min, x_max, g, power):
 # For rotating sky maps to equatorial coordinates
 def rotate_map(old_map):
     coord_matrix = np.matrix([[-0.202372670869508942, 0.971639226673224665, 0.122321361599999998],
-                               [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
-                               [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
+                              [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
+                              [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]])
     map_matrix = np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
     npix = len(old_map)
     nside = hp.npix2nside(npix)
@@ -98,20 +98,67 @@ def rotate_map(old_map):
     return new_map
 
 
-# Sort particles into energy bins
-def bin_particles(particles, binning):
-    return 0
+# Create a log spaced energy binning scheme
+def create_bin_sizes(particles, num_bins):
+    max_energy = 0
+    min_energy = sys.float_info.max
+    for pixel in particles:
+        for particle in pixel:
+            if particle[0] > max_energy:
+                max_energy = particle[0]
+            if particle[0] < min_energy:
+                min_energy = particle[0]
+    max_log = np.log10(1.01 * max_energy)
+    min_log = np.log10(0.99 * min_energy)
+    cutoffs = np.logspace(min_log, max_log, num=num_bins + 1, base=10)
+    return cutoffs
+
+
+# Sort particles into energy bins. Returns a 3D array with pixels on axis 0, bins on axis 1 and particles on axis 2
+def bin_particles(pixels, binning):
+    num_pixels = len(pixels)
+    num_bins = len(binning) - 1
+    pixels_binned = []
+    for particles_list in pixels:
+        particles_binned = [[] for i in range(num_bins)]
+        for particle in particles_list:
+            for i in range(num_bins):
+                if binning[i] < particle[0] < binning[i + 1]:
+                    particles_binned[i].append(particle)
+                    break
+        pixels_binned.append(particles_binned)
+    return pixels_binned
 
 
 # Create sky map of reweighed momenta
 def create_reweighed_sky_maps(binned_particles):
-    reweighed_maps = np.zeros(len(binned_particles))
+    num_pixels = len(binned_particles)
+    num_bins = len(binned_particles[0])
 
-    return reweighed_maps
+    flux_maps = np.zeros((num_bins, num_pixels))
+
+    for i in range(num_bins):
+        for j in range(num_pixels):
+            flux_total = 0
+            for particle in binned_particles[j][i]:
+                flux_total += particle[1]
+            flux_maps[i][j] = flux_total
+
+    return flux_maps
 
 
 # Create sky map of the average time of particles to propagate out of the system
 def create_time_maps(binned_particles):
-    timed_maps = np.zeros(len(binned_particles))
+    num_pixels = len(binned_particles)
+    num_bins = len(binned_particles[0])
+
+    timed_maps = np.zeros((num_bins, num_pixels))
+
+    for i in range(num_bins):
+        for j in range(num_pixels):
+            time_total = 0
+            for particle in binned_particles[j][i]:
+                time_total += particle[2]
+            timed_maps[i][j] = time_total / len(binned_particles[j][i])
 
     return timed_maps
