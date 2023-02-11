@@ -51,21 +51,20 @@ for key in data:
         widths = data[key]
 
 # Rotate all maps
-for flux_map in flux_maps:
-    flux_map = rotate_map(flux_map)
+for i in range(len(flux_maps)):
+    flux_maps[i] = rotate_map(flux_maps[i])
 
-for time_map in time_maps:
-    time_map = rotate_map(time_map)
+for i in range(len(time_maps)):
+    time_maps[i] = rotate_map(time_maps[i])
 
-for chi_squared_flux_map in chi_squared_flux_maps:
-    chi_squared_flux_map = rotate_map(chi_squared_flux_map)
+for i in range(len(chi_squared_flux_maps)):
+    chi_squared_flux_maps[i] = rotate_map(chi_squared_flux_maps[i])
 
-for chi_squared_dist_map in chi_squared_dist_maps:
-    chi_squared_dist_map = rotate_map(chi_squared_dist_map)
+for i in range(len(chi_squared_dist_maps)):
+    chi_squared_dist_maps[i] = rotate_map(chi_squared_dist_maps[i])
 
-for kolmogorov_dist_map in kolmogorov_dist_maps:
-    kolmogorov_dist_map = rotate_map(kolmogorov_dist_map)
-
+for i in range(len(kolmogorov_dist_maps)):
+    kolmogorov_dist_maps[i] = rotate_map(kolmogorov_dist_maps[i])
 
 # Plot binned tests
 bin_counter = 0
@@ -80,14 +79,16 @@ for i in range(len(bins)):
                              title=f'Flux skymap for ' + "{0:.3g}".format(lower_limit) +
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                              unit="Flux")
-        plt.savefig(args.outdir + f'flux_map_num_bins={bins[i]}_bin={j}')
+        hp.graticule()
+        plt.savefig(args.outdir + f'flux/flux_map_num_bins={bins[i]}_bin={j}')
 
         plt.set_cmap('coolwarm')
-        hp.visufunc.mollview(time_maps[bin_counter],
+        hp.visufunc.mollview(np.log10(time_maps[bin_counter]),
                              title=f'Time skymap for ' + "{0:.3g}".format(lower_limit) +
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="Time /s")
-        plt.savefig(args.outdir + f'time_map_num_bins={bins[i]}_bin={j}')
+                             unit="Log(Time /s)")
+        hp.graticule()
+        plt.savefig(args.outdir + f'time/time_map_num_bins={bins[i]}_bin={j}')
 
         bin_counter += 1
 
@@ -103,7 +104,8 @@ for i in range(len(limits)):
                              title=f'Kolmogorov-Smirnov P-Values for ' + "{0:.3g}".format(lower_limit) +
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                              unit="P")
-        plt.savefig(args.outdir + f'kolmogorov_map_p_limit={i}_width={j}')
+        hp.graticule()
+        plt.savefig(args.outdir + f'kolmogorov-p/kolmogorov_map_p_limit={i}_width={width}')
 
         z_values = stat.norm.ppf(1 - kolmogorov_dist_maps[limits_counter])
 
@@ -111,7 +113,10 @@ for i in range(len(limits)):
         hp.visufunc.mollview(z_values,
                              title=f'Kolmogorov-Smirnov Z-Scores for ' + "{0:.3g}".format(lower_limit) +
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="Sigma")
-        plt.savefig(args.outdir + f'kolmogorov_map_z_limit={i}_width={j}')
+                             unit="Sigma",
+                             min=0,
+                             max=5)
+        hp.graticule()
+        plt.savefig(args.outdir + f'kolmogorov-z/kolmogorov_map_z_limit={i}_width={width}')
 
     limits_counter += 1

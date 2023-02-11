@@ -4,7 +4,7 @@ from scipy.stats import distributions
 from tqdm import tqdm
 
 
-# Kolmogorov-Smirnov test for two weighted distributions
+# kolmogorov-p-Smirnov test for two weighted distributions
 def ks_weighted(data1, data2, wei1, wei2, alternative='two-sided'):
     ix1 = np.argsort(data1)
     ix2 = np.argsort(data2)
