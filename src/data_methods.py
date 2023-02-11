@@ -1,7 +1,6 @@
 import sys
 import numpy as np
 import healpy as hp
-
 from PathSegment import PathSegment
 
 

@@ -1,6 +1,7 @@
 import numpy as np
 import healpy as hp
 from scipy.stats import distributions
+from tqdm import tqdm
 
 
 # Kolmogorov-Smirnov test for two weighted distributions
@@ -82,7 +83,7 @@ def perform_kolmogorov_smirnov(particles, limits, width):
     upper = limits[1] / (m_p * c * c / (e * 10 ** 12))
 
     p_values = np.zeros(npix)
-    for i in range(npix):
+    for i in tqdm(range(npix)):
         strip_distribution = get_strip_distribution(i, particles, nside, width)
         strip_distribution = impose_energy_range(strip_distribution, lower, upper)
         pixel_distribution = get_pixel_distribution(particles[i])
