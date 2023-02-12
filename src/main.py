@@ -3,7 +3,7 @@
 import numpy as np
 import healpy as hp
 from data_methods import create_bin_sizes, bin_particles, create_reweighed_sky_maps, create_time_maps
-from statistical_methods import perform_kolmogorov_smirnov, z_score_flux_map
+from statistical_methods import perform_kolmogorov_smirnov
 from argparse import ArgumentParser
 
 # Parser for reading command line arguments
@@ -76,10 +76,6 @@ for binning in bins:
     # Create time map
     print(f'Creating time averaged maps for {binning} energy bins')
     time_maps = [*time_maps, *create_time_maps(binned_particles)]
-
-    # Create Z score flux maps
-    print(f'Creating Z score flux maps for {binning} energy bins')
-    z_score_flux_maps = [*z_score_flux_maps, *z_score_flux_map(binned_particles)]
 
     # Perform statistical tests for each width
     for width in widths:

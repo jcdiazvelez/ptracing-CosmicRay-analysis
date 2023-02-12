@@ -92,29 +92,3 @@ def perform_kolmogorov_smirnov(particles, limits, width):
                                   pixel_distribution[1], strip_distribution[1])[1]
 
     return p_values
-
-
-# Find Z-scores of pixels in flux maps
-def z_score_flux_map(binned_pixels):
-    num_pixels = len(binned_pixels)
-    num_bins = len(binned_pixels[0])
-
-    flux_maps = np.zeros((num_bins, num_pixels))
-
-    for i in range(num_bins):
-        particle_counts = np.zeros(num_pixels)
-        reweighed_particle_counts = np.zeros(num_pixels)
-        for j in range(num_pixels):
-            particle_counts[j] = len(binned_pixels[j][i])
-            reweighed_particle_counts[j] = sum([particle[1] for particle in binned_pixels[j][i]])
-
-        mean_particles = np.average(particle_counts)
-        mean_weight = np.average(reweighed_particle_counts)
-
-        count_sigma = stat.tstd(particle_counts / mean_particles)
-        reweighed_particle_counts *= mean_particles / mean_weight
-        adjusted_weights = (reweighed_particle_counts - mean_particles) / count_sigma
-
-        flux_maps[i] = adjusted_weights
-
-    return flux_maps

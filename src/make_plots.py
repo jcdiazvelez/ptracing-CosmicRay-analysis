@@ -90,14 +90,6 @@ for i in range(len(bins)):
         hp.graticule()
         plt.savefig(args.outdir + f'time/time_map_num_bins={bins[i]}_bin={j}')
 
-        plt.set_cmap('coolwarm')
-        hp.visufunc.mollview(z_score_flux_maps[bin_counter],
-                             title=f'Flux Z-Scores for ' + "{0:.3g}".format(lower_limit) +
-                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="Sigma")
-        hp.graticule()
-        plt.savefig(args.outdir + f'flux-z/flux_map_z_num_bins={bins[i]}_bin={j}')
-
         bin_counter += 1
 
 limits_counter = 0
