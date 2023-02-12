@@ -115,7 +115,6 @@ def create_bin_sizes(particles, num_bins):
 
 # Sort particles into energy bins. Returns a 3D array with pixels on axis 0, bins on axis 1 and particles on axis 2
 def bin_particles(pixels, binning):
-    num_pixels = len(pixels)
     num_bins = len(binning) - 1
     pixels_binned = []
     for particles_list in pixels:

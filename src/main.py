@@ -3,7 +3,7 @@
 import numpy as np
 import healpy as hp
 from data_methods import create_bin_sizes, bin_particles, create_reweighed_sky_maps, create_time_maps
-from statistical_methods import perform_kolmogorov_smirnov
+from statistical_methods import perform_kolmogorov_smirnov, z_score_flux_map
 from argparse import ArgumentParser
 
 # Parser for reading command line arguments
@@ -19,6 +19,8 @@ parser.add_argument("-p", "--path", type=str, default='../data/',
 parser.add_argument("-f", "--file", type=str, default='nside=16num_bins=10.npz')
 parser.add_argument("-o", "--output", type=str, default='../figs/',
                     help="Output directory for figure data")
+parser.add_argument("-k", "--kolmogorov", type=bool, default=False,
+                    help="Run Kolmorogov tests (time consuming)")
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -49,7 +51,7 @@ max_bins = np.max(bins)
 # Create initial arrays to be written to by each of the tests
 reweighed_maps = []
 time_maps = []
-chi_squared_flux_maps = []
+z_score_flux_maps = []
 chi_squared_distribution_maps = []
 kolmogorov_smirnov_distribution_maps = []
 bin_limits = []
@@ -75,21 +77,23 @@ for binning in bins:
     print(f'Creating time averaged maps for {binning} energy bins')
     time_maps = [*time_maps, *create_time_maps(binned_particles)]
 
+    # Create Z score flux maps
+    print(f'Creating Z score flux maps for {binning} energy bins')
+    z_score_flux_maps = [*z_score_flux_maps, *z_score_flux_map(binned_particles)]
+
     # Perform statistical tests for each width
     for width in widths:
-        # Create chi squared flux maps
-        print(f'Performing chi squared test on flux maps for {binning} energy bins and width = {width}')
-
         # Create chi squared distribution maps
         print(f'Performing chi squared test on distribution maps for {binning} energy bins and width = {width}')
 
 # Perform KS test for each set of limits and widths
-for limit in limits:
-    for width in widths:
-        print(f'Performing Kolmogorov-Smirnov test on distribution with lower = {limit[0]} TeV, upper = {limit[1]} '
-              f'TeV and width = {width}')
-        ks_map = perform_kolmogorov_smirnov(particles, limit, width)
-        kolmogorov_smirnov_distribution_maps.append(ks_map)
+if args.kolmogorov:
+    for limit in limits:
+        for width in widths:
+            print(f'Performing Kolmogorov-Smirnov test on distribution with lower = {limit[0]} TeV, upper = {limit[1]} '
+                  f'TeV and width = {width}')
+            ks_map = perform_kolmogorov_smirnov(particles, limit, width)
+            kolmogorov_smirnov_distribution_maps.append(ks_map)
 
 # Save all produced data
 
@@ -99,7 +103,7 @@ print("saving %s" % output_name)
 np.savez_compressed(output_name,
                     flux=reweighed_maps,
                     time=time_maps,
-                    chisquareflux=chi_squared_flux_maps,
+                    zscoreflux=z_score_flux_maps,
                     chisquaredist=chi_squared_distribution_maps,
                     kolmogorov=kolmogorov_smirnov_distribution_maps,
                     binlimits=bin_limits,

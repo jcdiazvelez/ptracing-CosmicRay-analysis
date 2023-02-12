@@ -20,7 +20,7 @@ data = np.load(filename)
 
 flux_maps = 0
 time_maps = 0
-chi_squared_flux_maps = 0
+z_score_flux_maps = 0
 chi_squared_dist_maps = 0
 kolmogorov_dist_maps = 0
 
@@ -35,8 +35,8 @@ for key in data:
         flux_maps = data[key]
     elif key == 'time':
         time_maps = data[key]
-    elif key == 'chisquareflux':
-        chi_squared_flux_maps = data[key]
+    elif key == 'zscoreflux':
+        z_score_flux_maps = data[key]
     elif key == 'chisquaredist':
         chi_squared_dist_maps = data[key]
     elif key == 'kolmogorov':
@@ -57,8 +57,8 @@ for i in range(len(flux_maps)):
 for i in range(len(time_maps)):
     time_maps[i] = rotate_map(time_maps[i])
 
-for i in range(len(chi_squared_flux_maps)):
-    chi_squared_flux_maps[i] = rotate_map(chi_squared_flux_maps[i])
+for i in range(len(z_score_flux_maps)):
+    z_score_flux_maps[i] = rotate_map(z_score_flux_maps[i])
 
 for i in range(len(chi_squared_dist_maps)):
     chi_squared_dist_maps[i] = rotate_map(chi_squared_dist_maps[i])
@@ -89,6 +89,14 @@ for i in range(len(bins)):
                              unit="Log(Time /s)")
         hp.graticule()
         plt.savefig(args.outdir + f'time/time_map_num_bins={bins[i]}_bin={j}')
+
+        plt.set_cmap('coolwarm')
+        hp.visufunc.mollview(z_score_flux_maps[bin_counter],
+                             title=f'Flux Z-Scores for ' + "{0:.3g}".format(lower_limit) +
+                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
+                             unit="Sigma")
+        hp.graticule()
+        plt.savefig(args.outdir + f'flux-z/flux_map_z_num_bins={bins[i]}_bin={j}')
 
         bin_counter += 1
 
