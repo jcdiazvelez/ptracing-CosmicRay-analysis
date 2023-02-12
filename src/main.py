@@ -44,13 +44,8 @@ data = np.load(data_path, allow_pickle=True)
 # We need particle data
 particles = 0
 
-# Read in data from file
-for key in data:
-    if key == 'particles':
-        particles = data[key]
-
-npix = len(particles)
-nside = hp.npix2nside(npix)
+nside = args.nside
+npix = hp.nside2npix(nside)
 num_binnings = len(bins)
 num_limits = len(limits)
 num_widths = len(widths)
