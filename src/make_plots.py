@@ -66,13 +66,19 @@ for i in range(len(chi_squared_dist_maps)):
 for i in range(len(kolmogorov_dist_maps)):
     kolmogorov_dist_maps[i] = rotate_map(kolmogorov_dist_maps[i])
 
+# Physical constants for scaling energy
+c = 299792458
+e = 1.60217663 * 10 ** (-19)
+m_p = 1.67262192 * 10 ** (-27)
+energy_factor = 1 / (m_p * c * c / (e * 10 ** 12))
+
 # Plot binned tests
 bin_counter = 0
 for i in range(len(bins)):
     binning = bin_limits[i]
     for j in range(bins[i]):
-        lower_limit = binning[j] / 1000.
-        upper_limit = binning[j+1] / 1000.
+        lower_limit = binning[j] / energy_factor
+        upper_limit = binning[j+1] / energy_factor
 
         plt.set_cmap('coolwarm')
         hp.visufunc.mollview(flux_maps[bin_counter],

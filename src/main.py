@@ -56,12 +56,6 @@ chi_squared_distribution_maps = []
 kolmogorov_smirnov_distribution_maps = []
 bin_limits = []
 
-'''
-
-EVERYTHING IS IN SIMULATION UNITS CURRENTLY, NOT TEV
-
-'''
-
 # Do binned tests for each binning
 for binning in bins:
     particles = get_reweighed_particles(args.path, binning, args.nside, args.radius, args.phys_index, args.model_index)
