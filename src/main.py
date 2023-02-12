@@ -2,7 +2,8 @@
 
 import numpy as np
 import healpy as hp
-from data_methods import create_bin_sizes, bin_particles, create_reweighed_sky_maps, create_time_maps
+from data_methods import create_bin_sizes, bin_particles, create_reweighed_sky_maps,\
+    create_time_maps, get_reweighed_particles
 from statistical_methods import perform_kolmogorov_smirnov
 from argparse import ArgumentParser
 
@@ -14,13 +15,20 @@ parser.add_argument("-b", "--bins", type=str, default='./bins',
                     help="File containing binning schemes for binned tests")
 parser.add_argument("-w", "--widths", type=str, default='./widths',
                     help="File containing strip widths for strip tests")
-parser.add_argument("-p", "--path", type=str, default='../data/',
-                    help="Path to data file")
-parser.add_argument("-f", "--file", type=str, default='nside=16num_bins=10.npz')
 parser.add_argument("-o", "--output", type=str, default='../figs/',
                     help="Output directory for figure data")
 parser.add_argument("-k", "--kolmogorov", type=bool, default=False,
                     help="Run Kolmorogov tests (time consuming)")
+parser.add_argument("-p", "--path", type=str, default="../../data/newsets/h5hybrid-2",
+                    help="Path to data")
+parser.add_argument("-N", "--nside", type=int, default="16",
+                    help="plot resolution")
+parser.add_argument("-r", "--radius", type=int, default="50000",
+                    help="termination radius")
+parser.add_argument("-g", "--phys_index", type=float, default="-2.7",
+                    help="power law index for physical cosmic ray distribution")
+parser.add_argument("-P", "--model_index", type=float, default="-1.0",
+                    help="power law index for modelled cosmic ray distribution")
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -64,6 +72,8 @@ EVERYTHING IS IN SIMULATION UNITS CURRENTLY, NOT TEV
 
 # Do binned tests for each binning
 for binning in bins:
+    particles = get_reweighed_particles(args.path, binning, args.nside, args.radius, args.phys_index, args.model_index)
+
     # Sort particle data into energy bins
     bin_sizes = create_bin_sizes(particles, binning)
     bin_limits.append(np.pad(bin_sizes, (0, 1 + max_bins - len(bin_sizes))))

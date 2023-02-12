@@ -1,4 +1,7 @@
+import glob
 import sys
+from multiprocessing import Pool
+
 import numpy as np
 import healpy as hp
 from PathSegment import PathSegment
@@ -6,7 +9,6 @@ from PathSegment import PathSegment
 
 # Process data files and populate initial and final sky maps
 def process_particle_data(filename, nside, radius):
-    print("Processing: " + filename)
     file = np.load(filename)
 
     data_array = []
@@ -160,3 +162,76 @@ def create_time_maps(binned_particles):
             timed_maps[i][j] = time_total / len(binned_particles[j][i])
 
     return timed_maps
+
+
+# Generate particles list for a given binning
+
+def get_reweighed_particles(path, num_bins, nside, radius, phys_index, model_index):
+    filename = "*.npz"
+    path = path + "/" + filename
+
+    # Prepare file names for processing
+    files = sorted(glob.glob(path))
+    n_files = len(files)
+
+    npix = hp.nside2npix(nside)
+
+    # Use 16 worker processes
+    pool = Pool(processes=16)
+
+    # Create pool input for direction data map
+    pool_input = []
+    for i in range(n_files):
+        pool_input.append((files[i], nside, radius))
+
+    # Generate and flatten direction data
+    direction_data = pool.starmap(process_particle_data, pool_input)
+    direction_data = [ent for sublist in direction_data for ent in sublist]
+
+    # Create energy binning scheme
+    p_max, p_min = 0, sys.maxsize
+
+    # Determine max and min energy
+    for item in direction_data:
+        if item[2] < p_min:
+            p_min = item[2]
+        elif item[2] > p_max:
+            p_max = item[2]
+
+    # Create bins
+    bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
+
+    # Create a sky map for each bin, for weighing by energy
+    final_maps = np.zeros((num_bins, npix))
+    reweighed_particles = [[] for i in range(npix)]
+
+    # Populate initial and final maps
+    for item in direction_data:
+        final_pixel = item[1]
+        p = item[2]
+        p_bin = 0
+        for i in range(num_bins):
+            if p >= bin_sizes[i]:
+                p_bin += 1
+            else:
+                break
+        final_maps[p_bin][final_pixel] += 1
+
+    # Go back through the data and reweigh the initial map. Save the individual particle data fot statistical testing
+    for item in direction_data:
+        initial_pixel = item[0]
+        final_pixel = item[1]
+        p = item[2]
+        t = item[3]
+        p_bin = 0
+        for i in range(num_bins):
+            if p >= bin_sizes[i]:
+                p_bin += 1
+            else:
+                break
+        dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel)
+        direction_weight = final_maps[p_bin][final_pixel]
+        momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
+        reweighed_particles[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
+
+    return np.array(reweighed_particles)
