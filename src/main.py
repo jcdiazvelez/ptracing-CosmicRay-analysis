@@ -38,9 +38,6 @@ limits = np.loadtxt(args.limits)
 bins = np.loadtxt(args.bins, dtype=int)
 widths = np.loadtxt(args.widths, dtype=int)
 
-data_path = args.path + args.file
-data = np.load(data_path, allow_pickle=True)
-
 # We need particle data
 particles = 0
 
