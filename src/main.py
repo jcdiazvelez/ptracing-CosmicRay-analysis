@@ -51,8 +51,6 @@ max_bins = np.max(bins)
 # Create initial arrays to be written to by each of the tests
 reweighed_maps = []
 time_maps = []
-z_score_flux_maps = []
-chi_squared_distribution_maps = []
 kolmogorov_smirnov_distribution_maps = []
 bin_limits = []
 
@@ -95,8 +93,6 @@ print("saving %s" % output_name)
 np.savez_compressed(output_name,
                     flux=reweighed_maps,
                     time=time_maps,
-                    zscoreflux=z_score_flux_maps,
-                    chisquaredist=chi_squared_distribution_maps,
                     kolmogorov=kolmogorov_smirnov_distribution_maps,
                     binlimits=bin_limits,
                     limits=limits,

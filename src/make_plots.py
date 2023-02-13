@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
-parser.add_argument("-f", "--file", type=str, default='nside=16.npz')
+parser.add_argument("-f", "--file", type=str, default='nside=16_binned.npz')
 parser.add_argument("-p", "--path", type=str, default='../figs/')
 parser.add_argument("-o", "--outdir", type=str, default='../figs/')
 
@@ -20,8 +20,6 @@ data = np.load(filename)
 
 flux_maps = 0
 time_maps = 0
-z_score_flux_maps = 0
-chi_squared_dist_maps = 0
 kolmogorov_dist_maps = 0
 
 bin_limits = 0
@@ -35,10 +33,6 @@ for key in data:
         flux_maps = data[key]
     elif key == 'time':
         time_maps = data[key]
-    elif key == 'zscoreflux':
-        z_score_flux_maps = data[key]
-    elif key == 'chisquaredist':
-        chi_squared_dist_maps = data[key]
     elif key == 'kolmogorov':
         kolmogorov_dist_maps = data[key]
     elif key == 'binlimits':
@@ -56,12 +50,6 @@ for i in range(len(flux_maps)):
 
 for i in range(len(time_maps)):
     time_maps[i] = rotate_map(time_maps[i])
-
-for i in range(len(z_score_flux_maps)):
-    z_score_flux_maps[i] = rotate_map(z_score_flux_maps[i])
-
-for i in range(len(chi_squared_dist_maps)):
-    chi_squared_dist_maps[i] = rotate_map(chi_squared_dist_maps[i])
 
 for i in range(len(kolmogorov_dist_maps)):
     kolmogorov_dist_maps[i] = rotate_map(kolmogorov_dist_maps[i])
