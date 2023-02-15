@@ -18,7 +18,11 @@ def ks_weighted(data1, data2, wei1, wei2, alternative='two-sided'):
     c_wei2 = np.hstack([0, np.cumsum(wei2) / sum(wei2)])
     cdf1we = c_wei1[np.searchsorted(data1, combined, side='right')]
     cdf2we = c_wei2[np.searchsorted(data2, combined, side='right')]
-    d = np.max(np.abs(cdf1we - cdf2we))
+    diff = cdf1we - cdf2we
+    abs_diff = np.abs(diff)
+    d = np.max(abs_diff)
+    ind = np.argmax(abs_diff)
+    signed_d = diff[ind]
     # calculate p-value
     n1 = data1.shape[0]
     n2 = data2.shape[0]
@@ -32,7 +36,7 @@ def ks_weighted(data1, data2, wei1, wei2, alternative='two-sided'):
         # Requires m to be the largest of (n1, n2)
         expt = -2 * z ** 2 - 2 * z * (m + 2 * n) / np.sqrt(m * n * (m + n)) / 3.0
         prob = np.exp(expt)
-    return d, prob
+    return signed_d, prob
 
 
 # Get list of events and weights for a given pixel
@@ -53,11 +57,21 @@ def get_sky_distribution(pixel_list):
     return np.array([energies, weights])
 
 
+def get_ring_distribution(pixel_number, pixel_list, nside, num_pixels):
+    vec = hp.pix2vec(nside, pixel_number)
+    d_theta = np.sqrt(hp.nside2pixarea(nside))
+    particle_ring = hp.query_disc(nside, vec, num_pixels * d_theta)
+    return get_sky_distribution(pixel_list[particle_ring])
+
+
 # Get the pixel distribution of particles within a declination strip of the chosen pixel
 def get_strip_distribution(pixel_number, pixel_list, nside, num_pixels):
     theta, phi = hp.pix2ang(nside, pixel_number)
+    vec = hp.pix2vec(nside, pixel_number)
     d_theta = np.sqrt(hp.nside2pixarea(nside))
     strip = hp.query_strip(nside, theta - num_pixels * d_theta, theta + num_pixels * d_theta)
+    particle_ring = hp.query_disc(nside, vec, num_pixels * d_theta)
+    strip = np.setdiff1d(strip, particle_ring)
     return get_sky_distribution(pixel_list[strip])
 
 
@@ -86,9 +100,10 @@ def perform_kolmogorov_smirnov(particles, limits, width):
     for i in tqdm(range(npix)):
         strip_distribution = get_strip_distribution(i, particles, nside, width)
         strip_distribution = impose_energy_range(strip_distribution, lower, upper)
-        pixel_distribution = get_pixel_distribution(particles[i])
+        pixel_distribution = get_ring_distribution(i, particles, nside, width)
         pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
-        p_values[i] = ks_weighted(pixel_distribution[0], strip_distribution[0],
-                                  pixel_distribution[1], strip_distribution[1])[1]
+        results = ks_weighted(pixel_distribution[0], strip_distribution[0],
+                              pixel_distribution[1], strip_distribution[1])
+        p_values[i] = results[1] * np.sign(results[0])
 
     return p_values
