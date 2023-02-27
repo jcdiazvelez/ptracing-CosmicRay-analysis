@@ -50,7 +50,7 @@ for i in range(n_files):
 
 # Generate and flatten direction data
 direction_data = pool.starmap(process_particle_data, pool_input)
-direction_data = [ent for sublist in direction_data for ent in sublist]
+direction_data = np.array([ent for sublist in direction_data for ent in sublist])
 
 # Save produced data
 prefix = 'nside=' + str(nside)

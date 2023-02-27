@@ -19,12 +19,10 @@ parser.add_argument("-o", "--output", type=str, default='../figs/',
                     help="Output directory for figure data")
 parser.add_argument("-k", "--kolmogorov", type=bool, default=False,
                     help="Run Kolmorogov tests (time consuming)")
-parser.add_argument("-p", "--path", type=str, default="../../data/newsets/h5hybrid-2",
+parser.add_argument("-p", "--path", type=str, default="../../data/",
                     help="Path to data")
 parser.add_argument("-N", "--nside", type=int, default="16",
                     help="plot resolution")
-parser.add_argument("-r", "--radius", type=int, default="50000",
-                    help="termination radius")
 parser.add_argument("-g", "--phys_index", type=float, default="-2.7",
                     help="power law index for physical cosmic ray distribution")
 parser.add_argument("-P", "--model_index", type=float, default="-1.0",
@@ -38,9 +36,15 @@ limits = np.loadtxt(args.limits)
 bins = np.loadtxt(args.bins, dtype=int)
 widths = np.loadtxt(args.widths, dtype=int)
 
-# We need particle data
+# Read in particles
+particles_filename = args.path + 'nside=' + str(args.nside)
+particles_file = np.load(particles_filename)
 particles = 0
+for key in particles_file:
+    if key == 'particles':
+        particles = particles_file[key]
 
+# Set up parameters for tests
 nside = args.nside
 npix = hp.nside2npix(nside)
 num_binnings = len(bins)
@@ -56,7 +60,7 @@ bin_limits = []
 
 # Do binned tests for each binning
 for binning in bins:
-    particles = get_reweighed_particles(args.path, binning, args.nside, args.radius, args.phys_index, args.model_index)
+    particles = get_reweighed_particles(particles, binning, args.nside, args.phys_index, args.model_index)
 
     # Sort particle data into energy bins
     bin_sizes = create_bin_sizes(particles, binning)

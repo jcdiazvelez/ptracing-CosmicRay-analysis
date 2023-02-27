@@ -1,7 +1,4 @@
-import glob
 import sys
-from multiprocessing import Pool
-
 import numpy as np
 import healpy as hp
 from PathSegment import PathSegment
@@ -166,33 +163,14 @@ def create_time_maps(binned_particles):
 
 # Generate particles list for a given binning
 
-def get_reweighed_particles(path, num_bins, nside, radius, phys_index, model_index):
-    filename = "*.npz"
-    path = path + "/" + filename
-
-    # Prepare file names for processing
-    files = sorted(glob.glob(path))
-    n_files = len(files)
-
+def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index):
     npix = hp.nside2npix(nside)
-
-    # Use 16 worker processes
-    pool = Pool(processes=16)
-
-    # Create pool input for direction data map
-    pool_input = []
-    for i in range(n_files):
-        pool_input.append((files[i], nside, radius))
-
-    # Generate and flatten direction data
-    direction_data = pool.starmap(process_particle_data, pool_input)
-    direction_data = [ent for sublist in direction_data for ent in sublist]
 
     # Create energy binning scheme
     p_max, p_min = 0, sys.maxsize
 
     # Determine max and min energy
-    for item in direction_data:
+    for item in particles:
         if item[2] < p_min:
             p_min = item[2]
         elif item[2] > p_max:
@@ -206,7 +184,7 @@ def get_reweighed_particles(path, num_bins, nside, radius, phys_index, model_ind
     reweighed_particles = [[] for i in range(npix)]
 
     # Populate initial and final maps
-    for item in direction_data:
+    for item in particles:
         final_pixel = item[1]
         p = item[2]
         p_bin = 0
@@ -218,7 +196,7 @@ def get_reweighed_particles(path, num_bins, nside, radius, phys_index, model_ind
         final_maps[p_bin][final_pixel] += 1
 
     # Go back through the data and reweigh the initial map. Save the individual particle data fot statistical testing
-    for item in direction_data:
+    for item in particles:
         initial_pixel = item[0]
         final_pixel = item[1]
         p = item[2]
