@@ -37,7 +37,7 @@ bins = np.loadtxt(args.bins, dtype=int)
 widths = np.loadtxt(args.widths, dtype=int)
 
 # Read in particles
-particles_filename = args.path + 'nside=' + str(args.nside)
+particles_filename = args.path + 'nside=' + str(args.nside) + '.npz'
 particles_file = np.load(particles_filename)
 particle_array = 0
 for key in particles_file:
