@@ -214,4 +214,4 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
         reweighed_initial[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
         reweighed_final[final_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
 
-    return np.array(reweighed_initial), np.array(reweighed_final)
+    return [reweighed_initial, reweighed_final]
