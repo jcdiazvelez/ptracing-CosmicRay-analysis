@@ -185,7 +185,7 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
 
     # Populate initial and final maps
     for item in particles:
-        final_pixel = item[1]
+        final_pixel = int(item[1])
         p = item[2]
         p_bin = 0
         for i in range(num_bins):
@@ -197,8 +197,8 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
 
     # Go back through the data and reweigh the initial map. Save the individual particle data fot statistical testing
     for item in particles:
-        initial_pixel = item[0]
-        final_pixel = item[1]
+        initial_pixel = int(item[0])
+        final_pixel = int(item[1])
         p = item[2]
         t = item[3]
         p_bin = 0
