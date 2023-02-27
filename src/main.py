@@ -83,11 +83,6 @@ for binning in bins:
     print(f'Creating time averaged maps for {binning} energy bins')
     time_maps = [*time_maps, *create_time_maps(binned_particles)]
 
-    # Perform statistical tests for each width
-    for width in widths:
-        # Create chi squared distribution maps
-        print(f'Performing chi squared test on distribution maps for {binning} energy bins and width = {width}')
-
 # Perform KS test for each set of limits and widths
 if args.kolmogorov:
     for limit in limits:
