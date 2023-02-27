@@ -19,7 +19,7 @@ parser.add_argument("-o", "--output", type=str, default='../figs/',
                     help="Output directory for figure data")
 parser.add_argument("-k", "--kolmogorov", type=bool, default=False,
                     help="Run Kolmorogov tests (time consuming)")
-parser.add_argument("-p", "--path", type=str, default="../../data/",
+parser.add_argument("-p", "--path", type=str, default="../data/",
                     help="Path to data")
 parser.add_argument("-N", "--nside", type=int, default="16",
                     help="plot resolution")
@@ -39,10 +39,10 @@ widths = np.loadtxt(args.widths, dtype=int)
 # Read in particles
 particles_filename = args.path + 'nside=' + str(args.nside)
 particles_file = np.load(particles_filename)
-particles = 0
+particle_array = 0
 for key in particles_file:
     if key == 'particles':
-        particles = particles_file[key]
+        particle_array = particles_file[key]
 
 # Set up parameters for tests
 nside = args.nside
@@ -60,7 +60,7 @@ bin_limits = []
 
 # Do binned tests for each binning
 for binning in bins:
-    particles = get_reweighed_particles(particles, binning, args.nside, args.phys_index, args.model_index)
+    particles = get_reweighed_particles(particle_array, binning, args.nside, args.phys_index, args.model_index)
 
     # Sort particle data into energy bins
     bin_sizes = create_bin_sizes(particles, binning)
