@@ -76,8 +76,8 @@ for binning in bins:
     reweighed_maps = [*reweighed_maps_initial, *create_reweighed_sky_maps(binned_particles)]
 
     # Create reweighed final flux maps
-    print(f'Creating reweighed flux maps for {binning} energy bins')
-    reweighed_maps = [*reweighed_maps_final, *create_reweighed_sky_maps(binned_particles)]
+    print(f'Creating reweighed final flux maps for {binning} energy bins')
+    reweighed_maps_final = [*reweighed_maps_final, *create_reweighed_sky_maps(binned_final)]
 
     # Create time map
     print(f'Creating time averaged maps for {binning} energy bins')
