@@ -181,7 +181,8 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
 
     # Create a sky map for each bin, for weighing by energy
     final_maps = np.zeros((num_bins, npix))
-    reweighed_particles = [[] for i in range(npix)]
+    reweighed_initial = [[] for i in range(npix)]
+    reweighed_final = [[] for i in range(npix)]
 
     # Populate initial and final maps
     for item in particles:
@@ -210,6 +211,7 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
         dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel)
         direction_weight = final_maps[p_bin][final_pixel]
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
-        reweighed_particles[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
+        reweighed_initial[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
+        reweighed_final[final_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
 
-    return np.array(reweighed_particles)
+    return np.array(reweighed_initial), np.array(reweighed_final)

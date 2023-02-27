@@ -53,23 +53,31 @@ num_widths = len(widths)
 max_bins = np.max(bins)
 
 # Create initial arrays to be written to by each of the tests
-reweighed_maps = []
+reweighed_maps_initial = []
+reweighed_maps_final = []
 time_maps = []
 kolmogorov_smirnov_distribution_maps = []
 bin_limits = []
 
 # Do binned tests for each binning
 for binning in bins:
-    particles = get_reweighed_particles(particle_array, binning, args.nside, args.phys_index, args.model_index)
+    particle_sets = get_reweighed_particles(particle_array, binning, args.nside, args.phys_index, args.model_index)
+    particles = particle_sets[0]
+    particles_final = particle_sets[1]
 
     # Sort particle data into energy bins
     bin_sizes = create_bin_sizes(particles, binning)
     bin_limits.append(np.pad(bin_sizes, (0, 1 + max_bins - len(bin_sizes))))
     binned_particles = bin_particles(particles, bin_sizes)
+    binned_final = bin_particles(particles_final, bin_sizes)
 
-    # Create reweighed flux maps
+    # Create reweighed initial flux maps
+    print(f'Creating reweighed initial flux maps for {binning} energy bins')
+    reweighed_maps = [*reweighed_maps_initial, *create_reweighed_sky_maps(binned_particles)]
+
+    # Create reweighed final flux maps
     print(f'Creating reweighed flux maps for {binning} energy bins')
-    reweighed_maps = [*reweighed_maps, *create_reweighed_sky_maps(binned_particles)]
+    reweighed_maps = [*reweighed_maps_final, *create_reweighed_sky_maps(binned_particles)]
 
     # Create time map
     print(f'Creating time averaged maps for {binning} energy bins')
@@ -95,7 +103,8 @@ prefix = 'nside=' + str(nside)
 output_name = args.output + prefix
 print("saving %s" % output_name)
 np.savez_compressed(output_name,
-                    flux=reweighed_maps,
+                    flux=reweighed_maps_initial,
+                    flux_final=reweighed_maps_final,
                     time=time_maps,
                     kolmogorov=kolmogorov_smirnov_distribution_maps,
                     binlimits=bin_limits,
