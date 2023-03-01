@@ -1,3 +1,4 @@
+import statistics
 import sys
 import numpy as np
 import healpy as hp
@@ -153,10 +154,10 @@ def create_time_maps(binned_particles):
 
     for i in range(num_bins):
         for j in range(num_pixels):
-            time_total = 0
+            times = []
             for particle in binned_particles[j][i]:
-                time_total += particle[2]
-            timed_maps[i][j] = time_total / len(binned_particles[j][i])
+                times.append(particle[2])
+            timed_maps[i][j] = statistics.geometric_mean(times)
 
     return timed_maps
 
@@ -208,9 +209,11 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
                 p_bin += 1
             else:
                 break
+        bin_midpoint = statistics.geometric_mean(bin_sizes[p_bin:p_bin+1])
+
         dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel)
         direction_weight = final_maps[p_bin][final_pixel]
-        momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
+        momentum_weight = weight_powerlaw(bin_midpoint, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
         reweighed_initial[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
         reweighed_final[final_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
 
