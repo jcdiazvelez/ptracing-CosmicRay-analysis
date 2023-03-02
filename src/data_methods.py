@@ -137,11 +137,8 @@ def create_reweighed_sky_maps(binned_particles):
 
     for i in range(num_bins):
         for j in range(num_pixels):
-            flux_total = 0
             for particle in binned_particles[j][i]:
-                flux_total += particle[1]
-            flux_maps[i][j] = flux_total
-
+                flux_maps[i][j] += particle[1]
     return flux_maps
 
 
