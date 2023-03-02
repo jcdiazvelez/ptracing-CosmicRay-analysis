@@ -107,7 +107,7 @@ def create_bin_sizes(particles, num_bins):
                 max_energy = particle[0]
             if particle[0] < min_energy:
                 min_energy = particle[0]
-    max_log = np.log10(1.01 * max_energy)
+    max_log = np.log10(1.001 * max_energy)
     min_log = np.log10(0.99 * min_energy)
     cutoffs = np.logspace(min_log, max_log, num=num_bins + 1, base=10)
     return cutoffs
