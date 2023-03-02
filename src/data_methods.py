@@ -175,7 +175,7 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
             p_max = item[2]
 
     # Create bins
-    bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins)
+    bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001), num_bins + 1)
 
     # Create a sky map for each bin, for weighing by energy
     final_maps = np.zeros((num_bins, npix))

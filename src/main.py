@@ -21,7 +21,7 @@ parser.add_argument("-k", "--kolmogorov", type=bool, default=False,
                     help="Run Kolmorogov tests (time consuming)")
 parser.add_argument("-p", "--path", type=str, default="../data/",
                     help="Path to data")
-parser.add_argument("-N", "--nside", type=int, default="16",
+parser.add_argument("-N", "--nside", type=int, default="2",
                     help="plot resolution")
 parser.add_argument("-g", "--phys_index", type=float, default="-2.7",
                     help="power law index for physical cosmic ray distribution")
