@@ -39,10 +39,7 @@ widths = np.loadtxt(args.widths, dtype=int)
 # Read in particles
 particles_filename = args.path + 'nside=' + str(args.nside) + '.npz'
 particles_file = np.load(particles_filename)
-particle_array = 0
-for key in particles_file:
-    if key == 'particles':
-        particle_array = particles_file[key]
+particle_array = particles_file['particles']
 
 # Set up parameters for tests
 nside = args.nside
