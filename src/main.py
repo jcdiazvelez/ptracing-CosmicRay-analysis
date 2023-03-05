@@ -2,8 +2,8 @@
 
 import numpy as np
 import healpy as hp
-from data_methods import create_bin_sizes, bin_particles, create_reweighed_sky_maps,\
-    create_time_maps, get_reweighed_particles
+from data_methods import create_bin_sizes, bin_particles, create_reweighed_sky_maps, \
+    create_time_maps, get_reweighed_particles, rotate_map, rotate_map_sim
 from statistical_methods import perform_kolmogorov_smirnov
 from argparse import ArgumentParser
 
@@ -92,8 +92,13 @@ if args.kolmogorov:
             ks_map = perform_kolmogorov_smirnov(particles, limit, width)
             kolmogorov_smirnov_distribution_maps.append(ks_map)
 
-# Save all produced data
+# Rotate sky maps to appropriate coordinates
+reweighed_maps_initial = hp.sphtfunc.smoothing(rotate_map(reweighed_maps_initial), fwhm=0.05)
+reweighed_maps_final = rotate_map_sim(reweighed_maps_final)
+time_maps = rotate_map(time_maps)
+kolmogorov_smirnov_distribution_maps = rotate_map(kolmogorov_smirnov_distribution_maps)
 
+# Save all produced data
 prefix = 'nside=' + str(nside)
 output_name = args.output + prefix
 print("saving %s" % output_name)
@@ -102,7 +107,7 @@ np.savez_compressed(output_name,
                     flux_final=reweighed_maps_final,
                     time=time_maps,
                     kolmogorov=kolmogorov_smirnov_distribution_maps,
-                    binlimits=bin_limits,
+                    bin_limits=bin_limits,
                     limits=limits,
                     bins=bins,
                     widths=widths)
