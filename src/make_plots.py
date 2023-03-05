@@ -32,12 +32,6 @@ widths = data['widths']
 
 # Make directories for saving figures
 out_path = args.outdir + f'nside={args.nside}/'
-os.makedirs(out_path + 'flux/')
-os.makedirs(out_path + 'flux_final/')
-os.makedirs(out_path + 'time/')
-os.makedirs(out_path + 'power/')
-os.makedirs(out_path + 'kolmogorov_p/')
-os.makedirs(out_path + 'kolmogorov_z/')
 
 # Physical constants for scaling energy
 c = 299792458
