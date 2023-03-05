@@ -32,8 +32,6 @@ widths = data['widths']
 
 # Make directories for saving figures
 out_path = args.outdir + f'nside={args.nside}/'
-os.makedirs(out_path + 'kolmogorov_p/')
-os.makedirs(out_path + 'kolmogorov_z/')
 
 # Physical constants for scaling energy
 c = 299792458
@@ -96,35 +94,38 @@ for i in range(len(bins)):
 
         bin_counter += 1
 
-limits_counter = 0
-for i in range(len(limits)):
-    lower_limit = limits[i][0]
-    upper_limit = limits[i][1]
-    for j in range(len(widths)):
-        width = widths[j]
-        p_values = kolmogorov_dist_maps[limits_counter]
+if kolmogorov_dist_maps:
+    os.makedirs(out_path + 'kolmogorov_p/')
+    os.makedirs(out_path + 'kolmogorov_z/')
+    limits_counter = 0
+    for i in range(len(limits)):
+        lower_limit = limits[i][0]
+        upper_limit = limits[i][1]
+        for j in range(len(widths)):
+            width = widths[j]
+            p_values = kolmogorov_dist_maps[limits_counter]
 
-        plt.set_cmap('bone')
-        hp.visufunc.mollview(np.abs(p_values),
-                             title=f'Kolmogorov-Smirnov P-Values for ' + "{0:.3g}".format(lower_limit) +
-                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="P")
-        hp.graticule()
-        plt.savefig(out_path + f'kolmogorov-p/kolmogorov_map_p_limit={i+counter}_width={width}')
+            plt.set_cmap('bone')
+            hp.visufunc.mollview(np.abs(p_values),
+                                 title=f'Kolmogorov-Smirnov P-Values for ' + "{0:.3g}".format(lower_limit) +
+                                       ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
+                                 unit="P")
+            hp.graticule()
+            plt.savefig(out_path + f'kolmogorov-p/kolmogorov_map_p_limit={i+counter}_width={width}')
 
-        signs = np.sign(p_values)
-        z_values = np.maximum(stat.norm.ppf(1 - np.abs(p_values)), 0) * signs
+            signs = np.sign(p_values)
+            z_values = np.maximum(stat.norm.ppf(1 - np.abs(p_values)), 0) * signs
 
-        plt.set_cmap('coolwarm')
+            plt.set_cmap('coolwarm')
 
-        hp.visufunc.mollview(z_values,
-                             title=f'Kolmogorov-Smirnov Z-Scores for ' + "{0:.3g}".format(lower_limit) +
-                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="Sigma",
-                             min=-5,
-                             max=5)
-        hp.graticule()
+            hp.visufunc.mollview(z_values,
+                                 title=f'Kolmogorov-Smirnov Z-Scores for ' + "{0:.3g}".format(lower_limit) +
+                                       ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
+                                 unit="Sigma",
+                                 min=-5,
+                                 max=5)
+            hp.graticule()
 
-        plt.savefig(out_path + f'kolmogorov-z/kolmogorov_map_z_limit={i+counter}_width={width}')
+            plt.savefig(out_path + f'kolmogorov-z/kolmogorov_map_z_limit={i+counter}_width={width}')
 
-    limits_counter += 1
+        limits_counter += 1
