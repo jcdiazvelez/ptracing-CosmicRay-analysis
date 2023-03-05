@@ -32,6 +32,8 @@ widths = data['widths']
 
 # Make directories for saving figures
 out_path = args.outdir + f'nside={args.nside}/'
+os.makedirs(out_path + 'kolmogorov_p/')
+os.makedirs(out_path + 'kolmogorov_z/')
 
 # Physical constants for scaling energy
 c = 299792458
@@ -108,7 +110,7 @@ for i in range(len(limits)):
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                              unit="P")
         hp.graticule()
-        plt.savefig(out_path + 'kolmogorov-p/' + suffix + f'kolmogorov_map_p_limit={i+counter}_width={width}')
+        plt.savefig(out_path + f'kolmogorov-p/kolmogorov_map_p_limit={i+counter}_width={width}')
 
         signs = np.sign(p_values)
         z_values = np.maximum(stat.norm.ppf(1 - np.abs(p_values)), 0) * signs
@@ -123,6 +125,6 @@ for i in range(len(limits)):
                              max=5)
         hp.graticule()
 
-        plt.savefig(out_path + 'kolmogorov-z/' + f'kolmogorov_map_z_limit={i+counter}_width={width}')
+        plt.savefig(out_path + f'kolmogorov-z/kolmogorov_map_z_limit={i+counter}_width={width}')
 
     limits_counter += 1
