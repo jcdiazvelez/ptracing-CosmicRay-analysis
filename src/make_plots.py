@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
-parser.add_argument("-N", "--nside", type=int, default='16')
+parser.add_argument("-N", "--nside", type=int, default='64')
 parser.add_argument("-p", "--path", type=str, default='../figs/')
 parser.add_argument("-o", "--outdir", type=str, default='../figs/')
 
@@ -46,15 +46,15 @@ for i in range(len(bins)):
     suffix = f'bins={bins[i]}/'
     os.makedirs(out_path + 'flux/' + suffix)
     os.makedirs(out_path + 'flux_final/' + suffix)
-    os.makedirs(out_path + 'time/bins=' + suffix)
-    os.makedirs(out_path + 'power/bins=' + suffix)
+    os.makedirs(out_path + 'time/' + suffix)
+    os.makedirs(out_path + 'power/' + suffix)
 
     for j in range(bins[i]):
         lower_limit = binning[j] / energy_factor
         upper_limit = binning[j + 1] / energy_factor
 
         plt.set_cmap('coolwarm')
-        hp.visufunc.mollview(np.log10(flux_maps[bin_counter] / stat.gmean(flux_maps[bin_counter])),
+        hp.visufunc.mollview(flux_maps[bin_counter] / stat.gmean(flux_maps[bin_counter]),
                              title=f'Relative intensity at Earth for ' + "{0:.3g}".format(lower_limit) +
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                              unit="log(Flux)",
@@ -62,7 +62,7 @@ for i in range(len(bins)):
                              max=2,
                              min=0.5)
         hp.graticule()
-        plt.savefig(out_path + 'flux/' + suffix + f'/flux_map_num_bins={bins[i]}_bin={j}')
+        plt.savefig(out_path + 'flux/' + suffix + f'flux_map_num_bins={bins[i]}_bin={j}')
 
         plt.clf()
 
@@ -79,20 +79,23 @@ for i in range(len(bins)):
                              unit="Flux",
                              min=0.999)
         hp.graticule()
-        plt.savefig(out_path + 'flux_final' + suffix + f'flux_map_final_num_bins={bins[i]}_bin={j}')
-
-        plt.set_cmap('coolwarm')
-        hp.visufunc.mollview(np.log10(time_maps[bin_counter]),
-                             title=f'Time skymap for ' + "{0:.3g}".format(lower_limit) +
-                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="Log(Time /s)",
-                             min=np.min(np.log10(time_maps)),
-                             max=np.max(np.log10(time_maps)))
-        hp.graticule()
-        plt.savefig(out_path + 'time/' + suffix + f'time_map_num_bins={bins[i]}_bin={j}')
-        plt.clf()
+        plt.savefig(out_path + 'flux_final/' + suffix + f'flux_map_final_num_bins={bins[i]}_bin={j}')
 
         bin_counter += 1
+
+        try:
+            plt.set_cmap('coolwarm')
+            hp.visufunc.mollview(np.log10(time_maps[bin_counter - 1]),
+                                 title=f'Time skymap for ' + "{0:.3g}".format(lower_limit) +
+                                       ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
+                                 unit="Log(Time /s)",
+                                 min=np.min(np.log10(time_maps)),
+                                 max=np.max(np.log10(time_maps)))
+            hp.graticule()
+            plt.savefig(out_path + 'time/' + suffix + f'time_map_num_bins={bins[i]}_bin={j}')
+            plt.clf()
+        except:
+            continue
 
 if kolmogorov_dist_maps:
     os.makedirs(out_path + 'kolmogorov_p/')
