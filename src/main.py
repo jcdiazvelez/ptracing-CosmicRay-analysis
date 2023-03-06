@@ -90,10 +90,13 @@ if args.kolmogorov:
             kolmogorov_smirnov_distribution_maps.append(ks_map)
 
 # Rotate sky maps to appropriate coordinates
-reweighed_maps_initial = hp.sphtfunc.smoothing(rotate_map(reweighed_maps_initial), fwhm=0.05)
-reweighed_maps_final = rotate_map_sim(reweighed_maps_final)
-time_maps = rotate_map(time_maps)
-kolmogorov_smirnov_distribution_maps = rotate_map(kolmogorov_smirnov_distribution_maps)
+for i in range(len(reweighed_maps_initial)):
+    reweighed_maps_initial[i] = hp.sphtfunc.smoothing(rotate_map(reweighed_maps_initial[i]), fwhm=0.05)
+    reweighed_maps_final[i] = rotate_map_sim(reweighed_maps_final[i])
+    time_maps[i] = rotate_map(time_maps[i])
+
+for i in range(len(kolmogorov_smirnov_distribution_maps)):
+    kolmogorov_smirnov_distribution_maps[i] = rotate_map(kolmogorov_smirnov_distribution_maps[i])
 
 # Save all produced data
 prefix = 'nside=' + str(nside)
