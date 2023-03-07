@@ -31,7 +31,7 @@ hp.visufunc.mollview(to_plot,
                      title='Initial distribution at Earth',
                      unit="Relative Flux",
                      norm='log',
-                     min=0.999,
-                     max=1.001)
+                     min=0.99,
+                     max=1.01)
 hp.graticule()
 plt.savefig('../figs/initial_back_propagation')
