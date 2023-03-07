@@ -5,12 +5,12 @@ import healpy as hp
 from matplotlib import pyplot as plt
 
 # Read in particles
-particles_filename = '../data/nside=16.npz'
+particles_filename = '../data/nside=32.npz'
 particles_file = np.load(particles_filename)
 particle_array = particles_file['particles']
 
 # Set up parameters for tests
-nside = 16
+nside = 32
 npix = hp.nside2npix(nside)
 
 # Create a sky map for each bin, for weighing by energy
@@ -28,7 +28,7 @@ hp.visufunc.mollview(initial_map / (np.sum(initial_map) / npix),
                      #      ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                      title='Initial distribution at Earth',
                      unit="Relative Flux",
-                     min=0.99,
-                     max=1.01)
+                     min=0.95,
+                     max=1.05)
 hp.graticule()
 plt.savefig('../figs/initial_back_propagation')
