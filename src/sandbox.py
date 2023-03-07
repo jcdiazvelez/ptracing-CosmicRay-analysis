@@ -30,8 +30,6 @@ hp.visufunc.mollview(to_plot,
                      #      ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                      title='Initial distribution at Earth',
                      unit="Relative Flux",
-                     norm='log',
-                     min=0.99,
-                     max=1.01)
+                     norm='log')
 hp.graticule()
 plt.savefig('../figs/initial_back_propagation')
