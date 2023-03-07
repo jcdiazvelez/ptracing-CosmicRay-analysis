@@ -86,7 +86,9 @@ if args.kolmogorov:
         for width in widths:
             print(f'Performing Kolmogorov-Smirnov test on distribution with lower = {limit[0]} TeV, upper = {limit[1]} '
                   f'TeV and width = {width}')
-            ks_map = perform_kolmogorov_smirnov(particles, limit, width)
+            ks_particles = get_reweighed_particles(particle_array, 50, args.nside,
+                                                   args.phys_index, args.model_index)[0]
+            ks_map = perform_kolmogorov_smirnov(ks_particles, limit, width)
             kolmogorov_smirnov_distribution_maps.append(ks_map)
 
 # Rotate sky maps to appropriate coordinates
