@@ -21,7 +21,7 @@ for item in particle_array:
     initial_pixel = int(item[0])
     initial_map[initial_pixel] += 1
 
-to_plot = hp.sphtfunc.smoothing(initial_map / (np.sum(initial_map) / npix), fwhm=0.05)
+to_plot = hp.sphtfunc.smoothing(initial_map / (np.sum(initial_map) / npix), fwhm=0.15)
 
 plt.set_cmap('coolwarm')
 hp.visufunc.mollview(to_plot,
