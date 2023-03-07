@@ -21,15 +21,17 @@ for item in particle_array:
     initial_pixel = int(item[0])
     initial_map[initial_pixel] += 1
 
+to_plot = hp.sphtfunc.smoothing(initial_map / (np.sum(initial_map) / npix), fwhm=0.05)
+
 plt.set_cmap('coolwarm')
-hp.visufunc.mollview(initial_map / (np.sum(initial_map) / npix),
+hp.visufunc.mollview(to_plot,
                      # title=f'Relative intensity at edge of simulation for ' + "{0:.3g}".format(lower_limit) +
                      # title="{0:.3g}".format(lower_limit) +
                      #      ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                      title='Initial distribution at Earth',
                      unit="Relative Flux",
                      norm='log',
-                     min=0.9,
-                     max=1.1)
+                     min=0.999,
+                     max=1.001)
 hp.graticule()
 plt.savefig('../figs/initial_back_propagation')
