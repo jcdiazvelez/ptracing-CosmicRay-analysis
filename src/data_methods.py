@@ -227,7 +227,6 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
                 p_bin += 1
             else:
                 break
-        bin_midpoint = stat.stats.gmean(bin_sizes[p_bin:p_bin+1])
 
         dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel)
         direction_weight = final_maps[p_bin][final_pixel]
