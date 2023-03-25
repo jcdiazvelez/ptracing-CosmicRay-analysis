@@ -214,6 +214,7 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
             else:
                 break
         final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
+        final_maps[p_bin][final_pixel] += 1
 
     # Go back through the data and reweigh the initial map. Save the individual particle data fot statistical testing
     for item in particles:
@@ -228,9 +229,10 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
             else:
                 break
 
-        dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel)
+        dipole_weight = 0.001 * cos_dipole_f(nside, final_pixel)
         direction_weight = final_maps[p_bin][final_pixel]
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
+        momentum_weight = 1
         reweighed_initial[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
         reweighed_final[final_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
 
