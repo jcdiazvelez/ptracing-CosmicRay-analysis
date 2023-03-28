@@ -213,7 +213,7 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
                 p_bin += 1
             else:
                 break
-        final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
+        #final_maps[p_bin][final_pixel] += weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
         final_maps[p_bin][final_pixel] += 1
 
     # Go back through the data and reweigh the initial map. Save the individual particle data fot statistical testing
