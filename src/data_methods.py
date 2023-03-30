@@ -181,8 +181,21 @@ def create_time_maps(binned_particles):
     return timed_maps
 
 
-# Generate particles list for a given binning
+def observational_weight(particle_energy):
+    # Physical constants for scaling energy
+    c = 299792458
+    e = 1.60217663 * 10 ** (-19)
+    m_p = 1.67262192 * 10 ** (-27)
+    energy_factor = 1 / (m_p * c * c / (e * 10 ** 12))
+    sigma = 0.5
 
+    mid_energy = np.log10(10 * energy_factor)
+    logged_energy = np.log10(particle_energy)
+
+    return np.exp(-0.5 * np.square((logged_energy - mid_energy) / sigma)) / (sigma * np.sqrt(2 * np.pi))
+
+
+# Generate particles list for a given binning
 def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index):
     npix = hp.nside2npix(nside)
 
@@ -231,11 +244,12 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
             else:
                 break
 
-        dipole_weight = 0.001 * cos_dipole_f(nside, final_pixel, b)
+        dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel, b)
         direction_weight = final_maps[p_bin][final_pixel]
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
+        obs_weight = observational_weight(p)
         # momentum_weight = 1
-        reweighed_initial[initial_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
+        reweighed_initial[initial_pixel].append([p, momentum_weight * dipole_weight * obs_weight / direction_weight, t])
         reweighed_final[final_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
 
     return [reweighed_initial, reweighed_final]
