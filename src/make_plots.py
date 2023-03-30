@@ -57,8 +57,9 @@ for i in range(len(bins)):
                              title="{0:.3g}".format(lower_limit) +
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                              unit="Relative Flux",
-                             min=-0.001,
-                             max=0.001)
+                             norm='log')
+                             #min=-0.001,
+                             #max=0.001)
         hp.graticule()
         plt.savefig(out_path + 'flux/' + suffix + f'flux_map_num_bins={bins[i]}_bin={j}')
 
