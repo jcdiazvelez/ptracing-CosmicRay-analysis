@@ -37,7 +37,8 @@ def process_particle_data(filename, nside, radius):
             # Determine initial and final pixels, returning these and the particle's momentum
             initial_pixel = hp.vec2pix(nside, p_first.px, p_first.py, p_first.pz)
             final_pixel = hp.vec2pix(nside, p_last.px, p_last.py, p_last.pz)
-            data_array.append((initial_pixel, final_pixel, p_last.p, p_last.time))
+            b = (p_last.Bx, p_last.By, p_last.Bz)
+            data_array.append((initial_pixel, final_pixel, p_last.p, p_last.time, b))
 
         except:
             continue
@@ -46,10 +47,10 @@ def process_particle_data(filename, nside, radius):
 
 
 # For applying a dipole to the final distribution of momenta
-def cos_dipole_f(nside, pix, bx=-1.737776, by=-1.287260, bz=2.345265):
+def cos_dipole_f(nside, pix, b):
     pxf, pyf, pzf = hp.pix2vec(nside, pix)
-    return -(pxf * bx + pyf * by + pzf * bz) / (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / np.sqrt(
-        bx * bx + by * by + bz * bz)
+    return -(pxf * b[0] + pyf * b[1] + pzf * b[2]) / (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / np.sqrt(
+        b[0] * b[0] + b[1] * b[1] + b[2] * b[2])
 
 
 # Probability density function for power law functions
@@ -222,6 +223,7 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
         final_pixel = int(item[1])
         p = item[2]
         t = item[3]
+        b = item[4]
         p_bin = -1
         for i in range(num_bins):
             if p >= bin_sizes[i]:
@@ -229,7 +231,7 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
             else:
                 break
 
-        dipole_weight = 0.001 * cos_dipole_f(nside, final_pixel)
+        dipole_weight = 0.001 * cos_dipole_f(nside, final_pixel, b)
         direction_weight = final_maps[p_bin][final_pixel]
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
         # momentum_weight = 1
