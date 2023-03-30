@@ -38,7 +38,7 @@ widths = np.loadtxt(args.widths, dtype=int)
 
 # Read in particles
 particles_filename = args.path + 'nside=' + str(args.nside) + '.npz'
-particles_file = np.load(particles_filename)
+particles_file = np.load(particles_filename, allow_pickle=True)
 particle_array = particles_file['particles']
 
 # Set up parameters for tests

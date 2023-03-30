@@ -7,18 +7,16 @@ from argparse import ArgumentParser
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
-parser.add_argument("-N", "--nside", type=int, default='64')
+parser.add_argument("-N", "--nside", type=int, default='16')
 parser.add_argument("-p", "--path", type=str, default='../figs/')
 parser.add_argument("-o", "--outdir", type=str, default='../figs/')
-
-counter = 38
 
 args = parser.parse_args()
 args_dict = vars(args)
 
 # Read in data file
 filename = args.path + 'nside=' + str(args.nside) + '.npz'
-data = np.load(filename)
+data = np.load(filename, allow_pickle=True)
 
 # Read in data
 flux_maps = data['flux']
@@ -54,13 +52,13 @@ for i in range(len(bins)):
         upper_limit = binning[j + 1] / energy_factor
 
         plt.set_cmap('coolwarm')
-        hp.visufunc.mollview(flux_maps[bin_counter] / stat.gmean(flux_maps[bin_counter]),
-                             title=f'Relative intensity at Earth for ' + "{0:.3g}".format(lower_limit) +
+        hp.visufunc.mollview(flux_maps[bin_counter], # / stat.gmean(abs(flux_maps[bin_counter])),
+                             # title=f'Relative intensity at Earth for ' + "{0:.3g}".format(lower_limit) +
+                             title="{0:.3g}".format(lower_limit) +
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="log(Flux)",
-                             norm='log',
-                             max=2,
-                             min=0.5)
+                             unit="Relative Flux",
+                             min=-0.001,
+                             max=0.001)
         hp.graticule()
         plt.savefig(out_path + 'flux/' + suffix + f'flux_map_num_bins={bins[i]}_bin={j}')
 
@@ -74,10 +72,11 @@ for i in range(len(bins)):
 
         plt.set_cmap('coolwarm')
         hp.visufunc.mollview(flux_maps_final[bin_counter],
-                             title=f'Relative intensity at edge of simulation for ' + "{0:.3g}".format(lower_limit) +
-                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="Flux",
-                             min=0.999)
+                             # title=f'Relative intensity at edge of simulation for ' + "{0:.3g}".format(lower_limit) +
+                             title="{0:.3g}".format(lower_limit) +
+                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV')
+                             # min=0.999,
+                             # max=1.001)
         hp.graticule()
         plt.savefig(out_path + 'flux_final/' + suffix + f'flux_map_final_num_bins={bins[i]}_bin={j}')
 
@@ -86,18 +85,19 @@ for i in range(len(bins)):
         try:
             plt.set_cmap('coolwarm')
             hp.visufunc.mollview(np.log10(time_maps[bin_counter - 1]),
-                                 title=f'Time skymap for ' + "{0:.3g}".format(lower_limit) +
+                                 # title=f'Time skymap for ' + "{0:.3g}".format(lower_limit) +
+                                 title="{0:.3g}".format(lower_limit) +
                                        ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                                  unit="Log(Time /s)",
-                                 min=np.min(np.log10(time_maps)),
-                                 max=np.max(np.log10(time_maps)))
+                                 min=5,
+                                 max=7)
             hp.graticule()
             plt.savefig(out_path + 'time/' + suffix + f'time_map_num_bins={bins[i]}_bin={j}')
             plt.clf()
         except:
             continue
 
-if kolmogorov_dist_maps:
+if len(kolmogorov_dist_maps) > 1:
     os.makedirs(out_path + 'kolmogorov_p/')
     os.makedirs(out_path + 'kolmogorov_z/')
     limits_counter = 0
@@ -114,7 +114,7 @@ if kolmogorov_dist_maps:
                                        ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                                  unit="P")
             hp.graticule()
-            plt.savefig(out_path + f'kolmogorov-p/kolmogorov_map_p_limit={i+counter}_width={width}')
+            plt.savefig(out_path + 'kolmogorov_p/' + f'kolmogorov_p_limit={i}_width={width}')
 
             signs = np.sign(p_values)
             z_values = np.maximum(stat.norm.ppf(1 - np.abs(p_values)), 0) * signs
@@ -125,10 +125,10 @@ if kolmogorov_dist_maps:
                                  title=f'Kolmogorov-Smirnov Z-Scores for ' + "{0:.3g}".format(lower_limit) +
                                        ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                                  unit="Sigma",
-                                 min=-5,
-                                 max=5)
+                                 min=-3,
+                                 max=3)
             hp.graticule()
 
-            plt.savefig(out_path + f'kolmogorov-z/kolmogorov_map_z_limit={i+counter}_width={width}')
+            plt.savefig(out_path + 'kolmogorov_z/' + f'kolmogorov_z_limit={i}_width={width}')
 
         limits_counter += 1
