@@ -187,7 +187,7 @@ def observational_weight(particle_energy):
     e = 1.60217663 * 10 ** (-19)
     m_p = 1.67262192 * 10 ** (-27)
     energy_factor = 1 / (m_p * c * c / (e * 10 ** 12))
-    sigma = 0.5
+    sigma = 0.25
 
     mid_energy = np.log10(10 * energy_factor)
     logged_energy = np.log10(particle_energy)
