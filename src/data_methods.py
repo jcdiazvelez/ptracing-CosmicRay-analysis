@@ -189,7 +189,7 @@ def observational_weight(particle_energy):
     energy_factor = 1 / (m_p * c * c / (e * 10 ** 12))
     sigma = 0.25
 
-    mid_energy = np.log10(10 * energy_factor)
+    mid_energy = np.log10(24 * energy_factor)
     logged_energy = np.log10(particle_energy)
 
     return np.exp(-0.5 * np.square((logged_energy - mid_energy) / sigma)) / (sigma * np.sqrt(2 * np.pi))
@@ -246,7 +246,7 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
             else:
                 break
 
-        dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel, b)
+        dipole_weight = 1 +  0.001 * cos_dipole_f(nside, final_pixel, b)
         direction_weight = final_maps[p_bin][final_pixel]
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
         obs_weight = observational_weight(p)
