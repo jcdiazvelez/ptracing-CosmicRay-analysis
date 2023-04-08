@@ -102,14 +102,14 @@ def perform_kolmogorov_smirnov(particles, limits, width):
     upper = limits[1] / (m_p * c * c / (e * 10 ** 12))
 
     p_values = []
-    for i in tqdm(range(npix)):
+    for i in tqdm(range(1230,1250)):
         strip_distribution = get_strip_distribution(i, particles, nside, width)
         strip_distribution = impose_energy_range(strip_distribution, lower, upper)
         pixel_distribution = get_ring_distribution(i, particles, nside, width)
         pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
         results = ks_weighted(pixel_distribution[0], strip_distribution[0],
                               pixel_distribution[1], strip_distribution[1])
-        p_values.append([results[0], results[1], results[2],results[3]])
+        p_values.append([results[2],results[3]])
 
     return p_values
 
@@ -145,9 +145,11 @@ ks_particles = np.array(get_reweighed_particles(particle_array, 1, args.nside,
 # Perform KS test for each set of limits and widths
 ks_data = perform_kolmogorov_smirnov(ks_particles, [0, 1000], 3)
 
+print(ks_data[0])
+
 for i in range(npix):
-    plt.loglog(ks_data[2], label=f'Pixel = {i}')
-    plt.loglog(ks_data[3], label=f'Average')
+    plt.loglog(ks_data[0], label=f'Pixel = {i}')
+    plt.loglog(ks_data[1], label=f'Average')
     plt.legend()
     plt.savefig(f'../figs/pixel={i}')
     plt.close()
