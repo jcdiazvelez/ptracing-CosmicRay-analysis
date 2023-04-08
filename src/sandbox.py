@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as stat
 from argparse import ArgumentParser
 from data_methods import create_bin_sizes, bin_particles, get_reweighed_particles, rotate_map
-
+from tqdm import tqdm
 
 # kolmogorov-p-Smirnov test for two weighted distributions
 def ks_weighted(data1, data2, wei1, wei2, alternative='two-sided'):
@@ -109,7 +109,7 @@ def perform_kolmogorov_smirnov(particles, limits, width):
         pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
         results = ks_weighted(pixel_distribution[0], strip_distribution[0],
                               pixel_distribution[1], strip_distribution[1])
-        p_values[i] = [results[0], results[1], results[2],results[3]]
+        p_values.append([results[0], results[1], results[2],results[3]])
 
     return p_values
 
@@ -146,17 +146,6 @@ particle_array = particles_file['particles']
 # Set up parameters for tests
 nside = args.nside
 npix = hp.nside2npix(nside)
-num_binnings = len(bins)
-num_limits = len(limits)
-num_widths = len(widths)
-max_bins = np.max(bins)
-
-# Create initial arrays to be written to by each of the tests
-reweighed_maps_initial = []
-reweighed_maps_final = []
-time_maps = []
-kolmogorov_smirnov_distribution_maps = []
-bin_limits = []
 
 ks_particles = np.array(get_reweighed_particles(particle_array, 1, args.nside,
                                                 args.phys_index, args.model_index)[0])
@@ -165,8 +154,8 @@ ks_particles = np.array(get_reweighed_particles(particle_array, 1, args.nside,
 ks_data = perform_kolmogorov_smirnov(ks_particles, [0, 1000], 3)
 
 for i in range(npix):
-    plt.loglog(ks_data[1], label=f'Pixel = {i}')
-    plt.loglog(ks_data[2], label=f'Average')
+    plt.loglog(ks_data[2], label=f'Pixel = {i}')
+    plt.loglog(ks_data[3], label=f'Average')
     plt.legend()
     plt.savefig(f'../figs/pixel={i}')
     plt.close()
