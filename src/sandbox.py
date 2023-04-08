@@ -145,11 +145,9 @@ ks_particles = np.array(get_reweighed_particles(particle_array, 1, args.nside,
 # Perform KS test for each set of limits and widths
 ks_data = perform_kolmogorov_smirnov(ks_particles, [0, 1000], 3)
 
-print(ks_data[0])
-
-for i in range(npix):
-    plt.loglog(ks_data[0], label=f'Pixel = {i}')
-    plt.loglog(ks_data[1], label=f'Average')
+for i in range(1230,1250):
+    plt.loglog(ks_data[i-1230][0], label=f'Pixel = {i}')
+    plt.loglog(ks_data[i-1230][1], label=f'Average')
     plt.legend()
     plt.savefig(f'../figs/pixel={i}')
     plt.close()
