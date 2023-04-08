@@ -145,7 +145,7 @@ ks_particles = np.array(get_reweighed_particles(particle_array, 1, args.nside,
 # Perform KS test for each set of limits and widths
 ks_data = perform_kolmogorov_smirnov(ks_particles, [0, 1000], 3)
 
-for i in range(1230,1250):
+for i in range(1230,1400):
     plt.loglog(ks_data[i-1230][0], label=f'Pixel = {i}')
     plt.loglog(ks_data[i-1230][1], label=f'Average')
     plt.legend()
@@ -157,5 +157,5 @@ prefix = 'kolmogorov'
 output_name = args.output + prefix
 print("saving %s" % output_name)
 np.savez_compressed(output_name,
-                    cumulative_data=np.array([ks_data[2],ks_data[3]]))
+                    cumulative_data=np.array(ks_data))
 
