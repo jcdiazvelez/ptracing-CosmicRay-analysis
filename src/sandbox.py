@@ -116,19 +116,11 @@ def perform_kolmogorov_smirnov(particles, limits, width):
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
-parser.add_argument("-l", "--limits", type=str, default='./limits',
-                    help="File containing limits for distribution tests")
-parser.add_argument("-b", "--bins", type=str, default='./bins',
-                    help="File containing binning schemes for binned tests")
-parser.add_argument("-w", "--widths", type=str, default='./widths',
-                    help="File containing strip widths for strip tests")
 parser.add_argument("-o", "--output", type=str, default='../figs/',
                     help="Output directory for figure data")
-parser.add_argument("-k", "--kolmogorov", type=bool, default=False,
-                    help="Run Kolmorogov tests (time consuming)")
 parser.add_argument("-p", "--path", type=str, default="../data/",
                     help="Path to data")
-parser.add_argument("-N", "--nside", type=int, default="2",
+parser.add_argument("-N", "--nside", type=int, default="16",
                     help="plot resolution")
 parser.add_argument("-g", "--phys_index", type=float, default="-2.7",
                     help="power law index for physical cosmic ray distribution")
@@ -159,4 +151,11 @@ for i in range(npix):
     plt.legend()
     plt.savefig(f'../figs/pixel={i}')
     plt.close()
+
+# Save all produced data
+prefix = 'kolmogorov'
+output_name = args.output + prefix
+print("saving %s" % output_name)
+np.savez_compressed(output_name,
+                    cumulative_data=np.array([ks_data[2],ks_data[3]]))
 
