@@ -246,12 +246,12 @@ def get_reweighed_particles(particles, num_bins, nside, phys_index, model_index)
             else:
                 break
 
-        dipole_weight = 1 +  0.001 * cos_dipole_f(nside, final_pixel, b)
+        dipole_weight = 1 + 0.001 * cos_dipole_f(nside, final_pixel, b)
         direction_weight = final_maps[p_bin][final_pixel]
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], phys_index, model_index)
         obs_weight = observational_weight(p)
         # momentum_weight = 1
         reweighed_initial[initial_pixel].append([p, momentum_weight * dipole_weight * obs_weight / direction_weight, t])
-        reweighed_final[final_pixel].append([p, momentum_weight * dipole_weight / direction_weight, t])
+        reweighed_final[final_pixel].append([p, momentum_weight * dipole_weight * obs_weight / direction_weight, t])
 
     return [reweighed_initial, reweighed_final]

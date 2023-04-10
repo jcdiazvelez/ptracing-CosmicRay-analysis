@@ -29,7 +29,7 @@ bins = data['bins']
 widths = data['widths']
 
 # Make directories for saving figures
-out_path = args.outdir + f'nside={args.nside}/'
+out_path = args.outdir + f'nside={args.nside + 100}/'
 
 # Physical constants for scaling energy
 c = 299792458
@@ -52,32 +52,33 @@ for i in range(len(bins)):
         upper_limit = binning[j + 1] / energy_factor
 
         plt.set_cmap('coolwarm')
-        smoothed = hp.sphtfunc.smoothing(flux_maps[bin_counter], fwhm=0.1)
+        smoothed = hp.sphtfunc.smoothing(flux_maps[bin_counter] - 1, fwhm=0.1)
         hp.visufunc.mollview(smoothed,  # / stat.gmean(abs(flux_maps[bin_counter])),
                              # title=f'Relative intensity at Earth for ' + "{0:.3g}".format(lower_limit) +
-                             title="{0:.3g}".format(lower_limit) +
+                             title="Reweighed Sky Map for a Uniform Initial Distribution: {0:.3g}".format(lower_limit) +
                                    ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="Relative Flux")
-                             # norm='log')
+                             unit="Relative Flux",
+                             min=-1,
+                             max=1)
 
         hp.graticule()
-        plt.savefig(out_path + 'flux/' + suffix + f'flux_map_num_bins={bins[i]}_bin={j}')
+        plt.savefig(out_path + 'flux/' + suffix + f'flux_map_uniform_num_bins={bins[i]}_bin={j}')
 
-        plt.clf()
+        plt.close()
 
         power = hp.anafast(flux_maps[bin_counter])
         plt.plot(np.log10(power))
         plt.savefig(out_path + 'power/' + suffix + f'power_spectrum_num_bins={bins[i]}_bin={j}')
 
-        plt.clf()
+        plt.close()
 
         plt.set_cmap('coolwarm')
-        hp.visufunc.mollview(flux_maps_final[bin_counter],
-                             # title=f'Relative intensity at edge of simulation for ' + "{0:.3g}".format(lower_limit) +
-                             title="{0:.3g}".format(lower_limit) +
-                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV')
-        # min=0.999,
-        # max=1.001)
+        hp.visufunc.mollview(flux_maps_final[bin_counter] - 0.001,
+                             title=f'Relative Intensity at Simulation Boundary for a Dipole Distribution')
+        # + "{0:.3g}".format(lower_limit) +
+        # title="{0:.3g}".format(lower_limit) +
+        # ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV')
+
         hp.graticule()
         plt.savefig(out_path + 'flux_final/' + suffix + f'flux_map_final_num_bins={bins[i]}_bin={j}')
 
@@ -94,7 +95,7 @@ for i in range(len(bins)):
                                  max=7)
             hp.graticule()
             plt.savefig(out_path + 'time/' + suffix + f'time_map_num_bins={bins[i]}_bin={j}')
-            plt.clf()
+            plt.close()
         except:
             continue
 
@@ -119,14 +120,14 @@ if len(kolmogorov_dist_maps) > 1:
 
             signs = np.sign(p_values)
             z_values = np.maximum(-stat.norm.ppf(np.abs(p_values)), 0) * signs
-            
+
             plt.set_cmap('coolwarm')
 
             hp.visufunc.mollview(z_values,
                                  title=f'Kolmogorov-Smirnov Z-Scores for ' + "{0:.3g}".format(lower_limit) +
                                        ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
                                  unit="Sigma",
-                                 max=12, 
+                                 max=12,
                                  min=-12)
             hp.graticule()
 
