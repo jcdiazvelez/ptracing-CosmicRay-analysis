@@ -5,9 +5,59 @@ import matplotlib.pyplot as plt
 import scipy.stats as stat
 from argparse import ArgumentParser
 
+from matplotlib import pylab
+
+
+def plot_skymap(skymap, title, proj='C', label='', filename=None, thresh=None, dMin=None, dMax=None, sun=None):
+    params = {'legend.fontsize': 'x-large',
+              # 'axes.labelsize': 'x-large',
+              'axes.titlesize': '20',
+              # 'xtick.labelsize': 'x-large',
+              # 'ytick.labelsize': 'x-large',
+              "font.family": "serif"}
+    pylab.rcParams.update(params)
+
+    colormap = pylab.get_cmap("coolwarm")
+    # colormap = pylab.get_cmap("jet")
+    colormap.set_under("w")
+
+    if proj == 'C0':
+        rotation = (0, 0, 0)
+    elif proj == 'C':
+        rotation = (-180, 0, 0)
+    else:
+        rotation = proj
+
+    hp.mollview(skymap,
+                fig=1,
+                title=title,
+                rot=rotation,  # coord=['C'],
+                unit=label,
+                margins=(0.0, 0.03, 0.0, 0.13),
+                notext=False, cmap=colormap, min=dMin, max=dMax)
+
+    fig = pylab.figure(1)
+    for ax in fig.get_axes()[0:1]:
+        if proj == 'C0':
+            ax.annotate("0$^\circ$", xy=(1.8, 0.625), size="x-large")
+            ax.annotate("360$^\circ$", xy=(-1.95, 0.625), size="x-large")
+        elif proj == 'C':
+            ax.annotate("0$^\circ$", xy=(1.8, 0.625), size="x-large")
+            ax.annotate("360$^\circ$", xy=(-1.95, 0.625), size="x-large")
+
+    if sun is not None:
+        hp.projscatter(sun[0], sun[1], lonlat=True, coord='C')
+        hp.projtext(sun[0], sun[1], 'Sun', lonlat=True, coord='C', fontsize=18)
+
+    hp.graticule()
+
+    if filename:
+        fig.savefig(filename, dpi=250)
+
+
 # Parser for reading command line arguments
 parser = ArgumentParser()
-parser.add_argument("-N", "--nside", type=int, default='17')
+parser.add_argument("-N", "--nside", type=int, default='5')
 parser.add_argument("-p", "--path", type=str, default='../figs/')
 parser.add_argument("-o", "--outdir", type=str, default='../figs/')
 
@@ -21,7 +71,6 @@ data = np.load(filename, allow_pickle=True)
 # Read in data
 flux_maps = data['flux']
 flux_maps_final = data['flux_final']
-time_maps = data['time']
 kolmogorov_dist_maps = data['kolmogorov']
 bin_limits = data['bin_limits']
 limits = data['limits']
@@ -29,7 +78,7 @@ bins = data['bins']
 widths = data['widths']
 
 # Make directories for saving figures
-out_path = args.outdir + f'nside={args.nside + 100}/'
+out_path = args.outdir + f'nside={args.nside + 10000}/'
 
 # Physical constants for scaling energy
 c = 299792458
@@ -44,63 +93,39 @@ for i in range(len(bins)):
     suffix = f'bins={bins[i]}/'
     os.makedirs(out_path + 'flux/' + suffix)
     os.makedirs(out_path + 'flux_final/' + suffix)
-    os.makedirs(out_path + 'time/' + suffix)
-    os.makedirs(out_path + 'power/' + suffix)
 
     for j in range(bins[i]):
         lower_limit = binning[j] / energy_factor
         upper_limit = binning[j + 1] / energy_factor
 
         plt.set_cmap('coolwarm')
-        smoothed = hp.sphtfunc.smoothing(flux_maps[bin_counter] - 1, fwhm=0.1)
-        hp.visufunc.mollview(smoothed,  # / stat.gmean(abs(flux_maps[bin_counter])),
-                             # title=f'Relative intensity at Earth for ' + "{0:.3g}".format(lower_limit) +
-                             title="Reweighed Sky Map for a Uniform Initial Distribution: {0:.3g}".format(lower_limit) +
-                                   ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                             unit="Relative Flux",
-                             min=-1,
-                             max=1)
-
-        hp.graticule()
-        plt.savefig(out_path + 'flux/' + suffix + f'flux_map_uniform_num_bins={bins[i]}_bin={j}')
-
-        plt.close()
-
-        power = hp.anafast(flux_maps[bin_counter])
-        plt.plot(np.log10(power))
-        plt.savefig(out_path + 'power/' + suffix + f'power_spectrum_num_bins={bins[i]}_bin={j}')
+        smoothed = hp.sphtfunc.smoothing(flux_maps[bin_counter], fwhm=0.1)
+        plot_skymap(smoothed,
+                    title=f"Dipole Initial Distribution \n" + "{0:.3g}".format(lower_limit) + " TeV < E < "
+                                                                                              "{0:.3g}".format(
+                        upper_limit) + " TeV",
+                    label="Relative Flux",
+                    proj='C0',
+                    dMin=-0.0013,
+                    dMax=0.0013,
+                    filename=out_path + 'flux/' + suffix + f'flux_map_num_bins={bins[i]}_bin={j}')
 
         plt.close()
 
         plt.set_cmap('coolwarm')
-        hp.visufunc.mollview(flux_maps_final[bin_counter] - 0.001,
-                             title=f'Relative Intensity at Simulation Boundary for a Dipole Distribution')
-        # + "{0:.3g}".format(lower_limit) +
-        # title="{0:.3g}".format(lower_limit) +
-        # ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV')
+        plot_skymap(flux_maps_final[bin_counter],
+                    title=f"Imposed Dipole Distribution \n at the Simulation Boundary",
+                    label="Flux",
+                    proj='C0',
+                    dMin=-0.001,
+                    dMax=0.001,
+                    filename=out_path + 'flux_final/' + suffix + f'flux_map_final_num_bins={bins[i]}_bin={j}')
 
-        hp.graticule()
-        plt.savefig(out_path + 'flux_final/' + suffix + f'flux_map_final_num_bins={bins[i]}_bin={j}')
+        plt.close()
 
         bin_counter += 1
 
-        try:
-            plt.set_cmap('coolwarm')
-            hp.visufunc.mollview(np.log10(time_maps[bin_counter - 1]),
-                                 # title=f'Time skymap for ' + "{0:.3g}".format(lower_limit) +
-                                 title="{0:.3g}".format(lower_limit) +
-                                       ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                                 unit="Log(Time /s)",
-                                 min=5,
-                                 max=7)
-            hp.graticule()
-            plt.savefig(out_path + 'time/' + suffix + f'time_map_num_bins={bins[i]}_bin={j}')
-            plt.close()
-        except:
-            continue
-
 if len(kolmogorov_dist_maps) > 1:
-    os.makedirs(out_path + 'kolmogorov_p/')
     os.makedirs(out_path + 'kolmogorov_z/')
     limits_counter = 0
     for i in range(len(limits)):
@@ -110,27 +135,17 @@ if len(kolmogorov_dist_maps) > 1:
             width = widths[j]
             p_values = kolmogorov_dist_maps[limits_counter]
 
-            plt.set_cmap('bone')
-            hp.visufunc.mollview(np.abs(p_values),
-                                 title=f'Kolmogorov-Smirnov P-Values for ' + "{0:.3g}".format(lower_limit) +
-                                       ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                                 unit="P")
-            hp.graticule()
-            plt.savefig(out_path + 'kolmogorov_p/' + f'kolmogorov_p_limit={i}_width={width}')
-
             signs = np.sign(p_values)
             z_values = np.maximum(-stat.norm.ppf(np.abs(p_values)), 0) * signs
 
-            plt.set_cmap('coolwarm')
+            plot_skymap(z_values,
+                        title='Kolmogorov-Smirnov Z-Scores for \n Dipole Initial Distribution',
+                        label="Significance / $\sigma$",
+                        proj='C0',
+                        dMin=-12,
+                        dMax=12,
+                        filename=out_path + 'kolmogorov_z/' + f'kolmogorov_z_uniform_limit={i}_width={width}')
 
-            hp.visufunc.mollview(z_values,
-                                 title=f'Kolmogorov-Smirnov Z-Scores for ' + "{0:.3g}".format(lower_limit) +
-                                       ' TeV < E < ' + "{0:.3g}".format(upper_limit) + ' TeV',
-                                 unit="Sigma",
-                                 max=12,
-                                 min=-12)
-            hp.graticule()
-
-            plt.savefig(out_path + 'kolmogorov_z/' + f'kolmogorov_z_limit={i}_width={width}')
+            plt.close()
 
         limits_counter += 1
