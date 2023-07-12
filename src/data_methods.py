@@ -122,7 +122,7 @@ def create_maps(nside, bins, obs_parameters, imposed_parameters,
                 break
         particle_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
                                           physical_index, -1)
-        particle_weight *= observational_weight(p)
+        particle_weight *= observational_weight(p, obs_parameters)
         final_maps[p_bin][final_pixel] += particle_weight
 
     # Go back through the data and reweigh the initial map
@@ -199,7 +199,7 @@ def create_weights(nside, bins, obs_parameters, imposed_parameters,
                 break
         particle_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
                                           physical_index, -1)
-        particle_weight *= observational_weight(p)
+        particle_weight *= observational_weight(p, obs_parameters)
         final_maps[p_bin][final_pixel] += particle_weight
 
     # Go back through the data and reweigh the initial map. Save the individual
