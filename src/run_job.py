@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from data_methods import create_particles, create_maps, \
-    create_weights
+    create_weights, rotate_map
 from statistical_methods import perform_kolmogorov_smirnov
 
 # Import configuration data for the job, and set up useful variables
@@ -46,6 +46,10 @@ for bins in binnings:
     standard_maps = create_maps(nside, bins, obs_parameters,
                                 imposed_parameters, physical_index,
                                 particle_dir, particle_file)
+    # Rotate maps to appropriate coordinate system
+    for i in range(bins):
+        standard_maps[0][i] = rotate_map(standard_maps[0][i])
+        standard_maps[1][i] = rotate_map(standard_maps[1][i])
     np.savez_compressed(maps_dir + f"standard_bins={bins}.npz")
 
     if run_unweighted:
@@ -53,6 +57,8 @@ for bins in binnings:
                                       imposed_parameters, physical_index,
                                       particle_dir, particle_file,
                                       type="unweighted")
+        unweighted_maps[0][i] = rotate_map(unweighted_maps[0][i])
+        unweighted_maps[1][i] = rotate_map(unweighted_maps[1][i])
         np.savez_compressed(maps_dir + f"unweighted={bins}.npz")
 
 # Create Kolmogorov maps if asked
@@ -65,6 +71,5 @@ if run_kolmogorov:
     kolmogorov_particles = np.array(kolmogorov_particles)
     kolmogorov_map = perform_kolmogorov_smirnov(kolmogorov_particles, limits,
                                                 width)
-
-    # Save Kolmogorov map in a new file
+    kolmogorov_map = rotate_map(kolmogorov_map)
     np.savez_compressed(maps_dir + "kolmogorov.npz")
