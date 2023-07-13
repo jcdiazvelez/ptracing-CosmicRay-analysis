@@ -50,7 +50,8 @@ for bins in binnings:
     for i in range(bins):
         standard_maps[0][i] = rotate_map(standard_maps[0][i])
         standard_maps[1][i] = rotate_map(standard_maps[1][i])
-    np.savez_compressed(maps_dir + f"standard_bins={bins}.npz")
+    np.savez_compressed(maps_dir + f"standard_bins={bins}.npz",
+                        flux=standard_maps)
 
     if run_unweighted:
         unweighted_maps = create_maps(nside, bins, obs_parameters,
@@ -59,7 +60,8 @@ for bins in binnings:
                                       type="unweighted")
         unweighted_maps[0][i] = rotate_map(unweighted_maps[0][i])
         unweighted_maps[1][i] = rotate_map(unweighted_maps[1][i])
-        np.savez_compressed(maps_dir + f"unweighted={bins}.npz")
+        np.savez_compressed(maps_dir + f"unweighted={bins}.npz",
+                            flux=unweighted_maps)
 
 # Create Kolmogorov maps if asked
 if run_kolmogorov:
@@ -72,4 +74,5 @@ if run_kolmogorov:
     kolmogorov_map = perform_kolmogorov_smirnov(kolmogorov_particles, limits,
                                                 width)
     kolmogorov_map = rotate_map(kolmogorov_map)
-    np.savez_compressed(maps_dir + "kolmogorov.npz")
+    np.savez_compressed(maps_dir + "kolmogorov.npz",
+                        kolmogorov=kolmogorov_map)
