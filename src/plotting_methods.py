@@ -60,7 +60,7 @@ def plot_flux(flux_map, out_dir, plot_type, bin):
         location = "Simulation Boundary"
 
     plot_skymap(smoothed,
-                title=f"Flux Distribution at {location} \n for Bin {bin}",
+                title=f"Flux Distribution at {location} for Bin {bin}",
                 label="Relative Flux",
                 proj='C0',
                 # dMin=-0.0013,
