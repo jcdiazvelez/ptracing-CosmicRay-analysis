@@ -84,7 +84,6 @@ def plot_kolmogorov(ks_map, out_dir):
 
 
 def plot_power(flux_map, out_dir, bin):
-    smoothed = hp.sphtfunc.smoothing(flux_map, fwhm=0.1)
-    spectrum = hp.anafast(smoothed, lmax=30)[1:]
+    spectrum = hp.anafast(flux_map, lmax=30)[1:]
     plt.scatter(range(2, len(spectrum) + 1), np.log10(spectrum))
     plt.savefig(out_dir + f'bin={bin}')

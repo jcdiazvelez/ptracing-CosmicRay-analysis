@@ -3,7 +3,7 @@ import os
 import glob
 import numpy as np
 
-from plotting_methods import plot_kolmogorov, plot_flux, plot_power 
+from plotting_methods import plot_kolmogorov, plot_flux, plot_power
 
 # Read in JSON and determine maps directory
 with open("config.json") as config_file:
