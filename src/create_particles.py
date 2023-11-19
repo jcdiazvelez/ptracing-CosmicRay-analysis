@@ -22,6 +22,8 @@ parser.add_argument("-g", "--phys_index", type=float, default="-2.7",
                     help="power law index for physical cosmic ray distribution")
 parser.add_argument("-P", "--model_index", type=float, default="-1.0",
                     help="power law index for modelled cosmic ray distribution")
+parser.add_argument("-t", "--threads", type=int, default=16,
+                    help="Number of simulataneous threas/processes to run in parallel")
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -41,7 +43,7 @@ files = sorted(glob.glob(path))
 n_files = len(files)
 
 # Use 16 worker processes
-pool = Pool(processes=16)
+pool = Pool(processes=args.threads)
 
 # Create pool input for direction data map
 pool_input = []

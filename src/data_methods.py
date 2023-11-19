@@ -71,8 +71,8 @@ def process_particle_data(filename, nside, radius):
             initial_pixel = hp.vec2pix(nside, p_first.px, p_first.py,
                                        p_first.pz)
             final_pixel = hp.vec2pix(nside, p_last.px, p_last.py, p_last.pz)
-            b = (p_last.Bx, p_last.By, p_last.Bz)
-            data_array.append((initial_pixel, final_pixel, p_last.p, b))
+            #b = (p_last.Bx, p_last.By, p_last.Bz)
+            data_array.append((initial_pixel, final_pixel, p_last.p, p_last.Bx,p_last.By, p_last.Bz))
 
         except Exception:
             continue
