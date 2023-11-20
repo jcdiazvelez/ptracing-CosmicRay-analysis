@@ -57,8 +57,8 @@ def plot_skymap(skymap, title, proj='C', label='', filename=None, thresh=None, d
 
 # Parser for reading command line arguments
 parser = ArgumentParser()
-parser.add_argument("-N", "--nside", type=int, default='5')
-parser.add_argument("-p", "--path", type=str, default='../figs/')
+parser.add_argument("-N", "--nside", type=int, default='16')
+parser.add_argument("-p", "--path", type=str, default='../data/particles/')
 parser.add_argument("-o", "--outdir", type=str, default='../figs/')
 
 args = parser.parse_args()

@@ -130,7 +130,10 @@ def create_maps(nside, bins, obs_parameters, imposed_parameters,
         initial_pixel = int(item[0])
         final_pixel = int(item[1])
         p = item[2]
-        b = item[3]
+        bx = item[3]
+        by = item[4]
+        bz = item [5]
+
         p_bin = -1
         for i in range(bins):
             if p >= bin_sizes[i]:
@@ -141,7 +144,7 @@ def create_maps(nside, bins, obs_parameters, imposed_parameters,
         uniform = imposed_parameters[0]
         dipole = imposed_parameters[1]
 
-        imposed_weight = uniform + dipole * cos_dipole_f(nside, final_pixel, b)
+        imposed_weight = uniform + dipole * cos_dipole_f(nside, final_pixel, bx, by, bz)
         direction_weight = final_maps[p_bin][final_pixel]
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
                                           physical_index, -1)
@@ -208,7 +211,9 @@ def create_weights(nside, bins, obs_parameters, imposed_parameters,
         initial_pixel = int(item[0])
         final_pixel = int(item[1])
         p = item[2]
-        b = item[3]
+        bx = item[3]
+        by = item[4]
+        bz = item [5]
         p_bin = -1
         for i in range(bins):
             if p >= bin_sizes[i]:
@@ -219,7 +224,7 @@ def create_weights(nside, bins, obs_parameters, imposed_parameters,
         uniform = imposed_parameters[0]
         dipole = imposed_parameters[1]
 
-        imposed_weight = uniform + dipole * cos_dipole_f(nside, final_pixel, b)
+        imposed_weight = uniform + dipole * cos_dipole_f(nside, final_pixel, bx, by, bz)
         direction_weight = final_maps[p_bin][final_pixel]
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
                                           physical_index, -1)
@@ -232,11 +237,11 @@ def create_weights(nside, bins, obs_parameters, imposed_parameters,
 
 
 # For applying a dipole to the final distribution of momenta
-def cos_dipole_f(nside, pix, b):
+def cos_dipole_f(nside, pix, bx, by, bz):
     pxf, pyf, pzf = hp.pix2vec(nside, pix)
-    return -(pxf * b[0] + pyf * b[1] + pzf * b[2]) / \
+    return -(pxf * bx + pyf * by + pzf * bz) / \
         (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / \
-        np.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2])
+        np.sqrt(bx * bx + by * by + bz * bz)
 
 
 # Probability density function for power law functions

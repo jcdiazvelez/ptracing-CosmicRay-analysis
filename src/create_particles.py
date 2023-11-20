@@ -10,9 +10,9 @@ from argparse import ArgumentParser
 # Parser for reading command line arguments
 parser = ArgumentParser()
 
-parser.add_argument("-o", "--output", type=str, default='../data/',
+parser.add_argument("-o", "--output", type=str, default='../data/particles/',
                     help="Output directory for particle data")
-parser.add_argument("-p", "--path", type=str, default="../../data/newsets/h5hybrid-2",
+parser.add_argument("-p", "--path", type=str, default="../data/raw/",
                     help="Path to data")
 parser.add_argument("-N", "--nside", type=int, default="16",
                     help="plot resolution")

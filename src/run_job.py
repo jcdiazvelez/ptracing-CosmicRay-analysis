@@ -17,7 +17,7 @@ with open("config.json") as config_file:
 nside = job_data["nside"]
 
 particle_dir = job_data["particle_data_location"]
-particle_file = f"particles_nside={nside}.npz"
+particle_file = f"nside={nside}.npz"
 
 if not os.path.exists(particle_dir + particle_file):
     raw_dir = job_data["raw_data_location"]
