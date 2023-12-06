@@ -70,6 +70,7 @@ if run_kolmogorov:
     kolmogorov_particles = create_weights(nside, 50, obs_parameters,
                                           imposed_parameters, physical_index,
                                           particle_dir, particle_file)
+    print(kolmogorov_particles)
     kolmogorov_particles = np.array(kolmogorov_particles)
     kolmogorov_map = perform_kolmogorov_smirnov(kolmogorov_particles, limits,
                                                 width)

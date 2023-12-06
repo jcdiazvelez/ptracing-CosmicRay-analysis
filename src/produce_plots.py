@@ -52,4 +52,4 @@ for file in map_files:
         for i in range(len(flux_maps[0])):
             plot_flux(flux_maps[0][i], initial_dir, "initial", i)
             plot_flux(flux_maps[1][i], final_dir, "final", i)
-            plot_power(flux_maps[0][i], power_dir, i)
+            plot_power(flux_maps[1][i], power_dir, i)

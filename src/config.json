@@ -1,15 +1,13 @@
 {
     "nside": 16,
     "binnings": [
-        10,
-        30,
-        50
+        20
     ],
     "imposed_distribution": [
         0.001,
         0.001
     ],
-    "observational?": true,
+    "observational?": false,
     "observational_parameters": [
         0.25,
         24.0
@@ -20,8 +18,8 @@
         1.0,
         20.0
     ],
-    "plot_unweighted?": true,
-    "plot_imposed?": true,
+    "plot_unweighted?": false,
+    "plot_imposed?": false,
     "physical_index": 2.7,
     "raw_data_location": "../data/raw/",
     "particle_data_location": "../data/particles/",
