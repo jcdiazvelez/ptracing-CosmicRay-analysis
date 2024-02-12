@@ -12,9 +12,15 @@
         0.25,
         24.0
     ],
-    "kolmogorov?": true,
+    "kolmogorov?": false,
     "kolmogorov_width": 3,
     "kolmogorov_limits": [
+        1.0,
+        20.0
+    ],
+    "chi_squared?": true,
+    "chi_squared_width": 1,
+    "chi_squared_limits": [
         1.0,
         20.0
     ],

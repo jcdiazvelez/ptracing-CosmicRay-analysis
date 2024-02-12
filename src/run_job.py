@@ -4,7 +4,7 @@ import numpy as np
 
 from data_methods import create_particles, create_maps, \
     create_weights, rotate_map
-from statistical_methods import perform_kolmogorov_smirnov
+from statistical_methods import perform_kolmogorov_smirnov, perform_chi_squared
 
 # Import configuration data for the job, and set up useful variables
 
@@ -21,7 +21,7 @@ particle_file = f"nside={nside}.npz"
 
 if not os.path.exists(particle_dir + particle_file):
     raw_dir = job_data["raw_data_location"]
-    create_particles(nside, particle_dir, particle_file, raw_dir)
+    #create_particles(nside, particle_dir, particle_file, raw_dir)
 
 # Config parameters to determine which weightings we need to produce
 
@@ -30,6 +30,7 @@ imposed_parameters = job_data["imposed_distribution"]
 use_observational = job_data["observational?"]
 obs_parameters = job_data["observational_parameters"]
 run_kolmogorov = job_data["kolmogorov?"]
+run_chi_squared = job_data["chi_squared?"]
 run_unweighted = job_data["plot_unweighted?"]
 physical_index = job_data["physical_index"]
 maps_dir = job_data["map_data_location"]
@@ -41,27 +42,27 @@ if not use_observational:
     obs_parameters[1] = -1
 
 # Produce all required weights files
-for bins in binnings:
-    # Create necessary sky maps for the binning
-    standard_maps = create_maps(nside, bins, obs_parameters,
-                                imposed_parameters, physical_index,
-                                particle_dir, particle_file)
-    # Rotate maps to appropriate coordinate system
-    for i in range(bins):
-        standard_maps[0][i] = rotate_map(standard_maps[0][i])
-        standard_maps[1][i] = rotate_map(standard_maps[1][i])
-    np.savez_compressed(maps_dir + f"standard_bins={bins}.npz",
-                        flux=standard_maps)
+# for bins in binnings:
+#     # Create necessary sky maps for the binning
+#     standard_maps = create_maps(nside, bins, obs_parameters,
+#                                 imposed_parameters, physical_index,
+#                                 particle_dir, particle_file)
+#     # Rotate maps to appropriate coordinate system
+#     for i in range(bins):
+#         standard_maps[0][i] = rotate_map(standard_maps[0][i])
+#         standard_maps[1][i] = rotate_map(standard_maps[1][i])
+#     np.savez_compressed(maps_dir + f"standard_bins={bins}.npz",
+#                         flux=standard_maps)
 
-    if run_unweighted:
-        unweighted_maps = create_maps(nside, bins, obs_parameters,
-                                      imposed_parameters, physical_index,
-                                      particle_dir, particle_file,
-                                      type="unweighted")
-        unweighted_maps[0][i] = rotate_map(unweighted_maps[0][i])
-        unweighted_maps[1][i] = rotate_map(unweighted_maps[1][i])
-        np.savez_compressed(maps_dir + f"unweighted={bins}.npz",
-                            flux=unweighted_maps)
+#     if run_unweighted:
+#         unweighted_maps = create_maps(nside, bins, obs_parameters,
+#                                       imposed_parameters, physical_index,
+#                                       particle_dir, particle_file,
+#                                       type="unweighted")
+#         unweighted_maps[0][i] = rotate_map(unweighted_maps[0][i])
+#         unweighted_maps[1][i] = rotate_map(unweighted_maps[1][i])
+#         np.savez_compressed(maps_dir + f"unweighted={bins}.npz",
+#                             flux=unweighted_maps)
 
 # Create Kolmogorov maps if asked
 if run_kolmogorov:
@@ -77,3 +78,17 @@ if run_kolmogorov:
     kolmogorov_map = rotate_map(kolmogorov_map)
     np.savez_compressed(maps_dir + "kolmogorov.npz",
                         kolmogorov=kolmogorov_map)
+
+# Create Chi-squared maps if asked
+if run_chi_squared:
+    width = job_data["chi_squared_width"]
+    limits = job_data["chi_squared_limits"]
+    chi_squared_particles = create_weights(nside, 50, obs_parameters,
+                                          imposed_parameters, physical_index,
+                                          particle_dir, particle_file)
+    chi_squared_particles = np.array(chi_squared_particles)
+    chi_squared_map = perform_chi_squared(chi_squared_particles, limits,
+                                                width)
+    chi_squared_map = rotate_map(chi_squared_map)
+    np.savez_compressed(maps_dir + "chi_squared.npz",
+                        chi_squared=chi_squared_map)

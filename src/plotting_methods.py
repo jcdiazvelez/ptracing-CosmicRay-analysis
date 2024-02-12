@@ -82,6 +82,19 @@ def plot_kolmogorov(ks_map, out_dir):
                 filename=out_dir + 'kolmogorov')
     plt.close()
 
+def plot_chi_squared(chi_squared_map, out_dir):
+    p_values = chi_squared_map
+    signs = np.sign(p_values)
+    z_values = np.maximum(-stat.norm.ppf(np.abs(p_values)), 0) * signs
+    plot_skymap(z_values,
+                title='Chi_squared',
+                label="Significance / $\sigma$",
+                proj='C0',
+                dMin=-12,
+                dMax=12,
+                filename=out_dir + 'chi_squared')
+    plt.close()
+
 
 def plot_power(flux_map, out_dir, bin):
     spectrum = hp.anafast(flux_map, lmax=30)[1:]

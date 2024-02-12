@@ -2,6 +2,7 @@ import numpy as np
 import healpy as hp
 import scipy.stats as stat
 from tqdm import tqdm
+from scipy import stats
 
 
 # kolmogorov-p-Smirnov test for two weighted distributions
@@ -38,6 +39,34 @@ def ks_weighted(data1, data2, wei1, wei2, alternative='two-sided'):
         prob = np.exp(expt)
     return signed_d, prob
 
+# Chi-squared test for two weighted distributions
+def chi_squared_weighted(data1, data2, wei1, wei2):
+    ix1 = np.argsort(data1)
+    ix2 = np.argsort(data2)
+    data1 = data1[ix1]
+    data2 = data2[ix2]
+    wei1 = wei1[ix1]
+    wei2 = wei2[ix2]
+    # Create the energy histogram
+    ebins = np.logspace(0,3,20)
+    ehist_on,edges = np.histogram(data1,bins=ebins,weights=wei1)
+    var_on, edges = np.histogram(data1,bins=ebins,weights=np.power(wei1,2))
+    sigma_on = np.sqrt(var_on)
+    ehist_off,edges = np.histogram(data2,bins=ebins,weights=wei2)
+    var_off, edges = np.histogram(data2,bins=ebins,weights=np.power(wei2,2))
+    sigma_off = np.sqrt(var_off)
+    npix_on = 1
+    npix_off = 50
+    # Check for zero or very small denominators
+    denominator_on = np.where(sigma_on / npix_on <= 0, np.inf, sigma_on / npix_on)
+    denominator_off = np.where(sigma_off / npix_off <= 0, np.inf, sigma_off / npix_off)
+    # Calculate chi-squared sum with handled denominators
+    chi2sum = 0
+    chi2sum = np.sum(np.power(ehist_on / npix_on - ehist_off / npix_off, 2) / (np.power(denominator_on, 2) + np.power(denominator_off, 2)))
+    # Calculate p-value
+    dof = len(ebins)-1
+    prob = 1 - stats.chi2.cdf(chi2sum, df=dof)
+    return prob
 
 # Get list of events and weights for a given pixel
 def get_pixel_distribution(pixel):
@@ -105,5 +134,31 @@ def perform_kolmogorov_smirnov(particles, limits, width):
         results = ks_weighted(pixel_distribution[0], strip_distribution[0],
                               pixel_distribution[1], strip_distribution[1])
         p_values[i] = results[1] * np.sign(results[0])
+
+    return p_values
+
+
+# Perform Chi-squared for a given set of particles, energy limits and strip width
+def perform_chi_squared(particles, limits, width):
+    # Physical constants for scaling momentum
+    c = 299792458
+    e = 1.60217663 * 10 ** (-19)
+    m_p = 1.67262192 * 10 ** (-27)
+
+    npix = len(particles)
+    nside = hp.npix2nside(npix)
+
+    lower = limits[0] / (m_p * c * c / (e * 10 ** 12))
+    upper = limits[1] / (m_p * c * c / (e * 10 ** 12))
+
+    p_values = np.zeros(npix)
+    for i in tqdm(range(npix)):
+        strip_distribution = get_strip_distribution(i, particles, nside, width)
+        strip_distribution = impose_energy_range(strip_distribution, lower, upper)
+        pixel_distribution = get_ring_distribution(i, particles, nside, width)
+        pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
+        results = chi_squared_weighted(pixel_distribution[0], strip_distribution[0],
+                              pixel_distribution[1], strip_distribution[1])
+        p_values[i] = results
 
     return p_values

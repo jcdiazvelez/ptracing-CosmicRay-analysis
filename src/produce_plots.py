@@ -3,7 +3,7 @@ import os
 import glob
 import numpy as np
 
-from plotting_methods import plot_kolmogorov, plot_flux, plot_power
+from plotting_methods import plot_kolmogorov, plot_chi_squared, plot_flux, plot_power
 
 # Read in JSON and determine maps directory
 with open("config.json") as config_file:
@@ -33,23 +33,28 @@ for file in map_files:
         ks_map = ks_map_data["kolmogorov"]
         plot_kolmogorov(ks_map, file_plot_dir)
 
-    else:
-        flux_maps_data = np.load(file, allow_pickle=True)
-        flux_maps = flux_maps_data["flux"]
+    if file_ID == "chi_squared":
+        chi_squared_data = np.load(file, allow_pickle=True)
+        chi_squared_map = chi_squared_data["chi_squared"]
+        plot_chi_squared(chi_squared_map, file_plot_dir)
 
-        initial_dir = file_plot_dir + "initial/"
-        final_dir = file_plot_dir + "final/"
-        power_dir = file_plot_dir + "power/"
+    #else:
+        # flux_maps_data = np.load(file, allow_pickle=True)
+        # flux_maps = flux_maps_data["flux"]
 
-        if not os.path.exists(initial_dir):
-            os.makedirs(initial_dir)
-        if not os.path.exists(final_dir):
-            os.makedirs(final_dir)
-        if not os.path.exists(power_dir):
-            os.makedirs(power_dir)
+        # initial_dir = file_plot_dir + "initial/"
+        # final_dir = file_plot_dir + "final/"
+        # power_dir = file_plot_dir + "power/"
 
-        # Plot initial and final maps
-        for i in range(len(flux_maps[0])):
-            plot_flux(flux_maps[0][i], initial_dir, "initial", i)
-            plot_flux(flux_maps[1][i], final_dir, "final", i)
-            plot_power(flux_maps[1][i], power_dir, i)
+        # if not os.path.exists(initial_dir):
+        #     os.makedirs(initial_dir)
+        # if not os.path.exists(final_dir):
+        #     os.makedirs(final_dir)
+        # if not os.path.exists(power_dir):
+        #     os.makedirs(power_dir)
+
+        # # Plot initial and final maps
+        # for i in range(len(flux_maps[0])):
+        #     plot_flux(flux_maps[0][i], initial_dir, "initial", i)
+        #     plot_flux(flux_maps[1][i], final_dir, "final", i)
+        #     plot_power(flux_maps[1][i], power_dir, i)
