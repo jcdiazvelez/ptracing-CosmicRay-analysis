@@ -234,7 +234,6 @@ def create_weights(nside, bins, obs_parameters, imposed_parameters,
                                                   imposed_weight * obs_weight /
                                                   direction_weight])
     max_length = max(len(sublist) for sublist in reweighed_particles)
-    print(max_length)
     reweighed_particles_equalized = [sublist + [[0, 0]] * (max_length - len(sublist)) for sublist in reweighed_particles]
     return reweighed_particles_equalized
 

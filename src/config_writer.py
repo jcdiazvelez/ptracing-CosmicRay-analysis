@@ -6,7 +6,7 @@ job = {
     "imposed_distribution": [0.001, 0.001],
 
     "observational?": True,
-    "observational_parameters": [0.25, 24.0],
+    "observational_parameters": [0.25, 24.0], # [-1, -1]
 
     "kolmogorov?": True,
     "kolmogorov_width": 3,
@@ -14,7 +14,7 @@ job = {
 
     "plot_unweighted?": True,
     "plot_imposed?": True,
-    "physical_index": 2.70,
+    "physical_index": 2.70, # 1.0
 
     "raw_data_location": "../data/raw/",
     "particle_data_location": "../data/particles/",
