@@ -87,8 +87,8 @@ def plot_kolmogorov(ks_map, out_dir):
 
 def plot_chi_squared(chi_squared_map, out_dir, name):
     chi2sum = chi_squared_map
-    print('np.argmax(chi2sum) ' + name, np.argmax(chi2sum))
-    print('np.argmin(chi2sum) ' + name, np.argmin(chi2sum))
+    # print('np.argmax(chi2sum) ' + name, np.argmax(chi2sum))
+    # print('np.argmin(chi2sum) ' + name, np.argmin(chi2sum))
     print('chi2sum[np.argmax(chi2sum)] ' + name, chi2sum[np.argmax(chi2sum)])
     print('chi2sum[np.argmin(chi2sum)] ' + name, chi2sum[np.argmin(chi2sum)])
     #print('chi2sum',chi2sum)
@@ -101,8 +101,8 @@ def plot_chi_squared(chi_squared_map, out_dir, name):
                 title=name,
                 label="Range",
                 proj='C0',
-                dMin=1.0,
-                dMax=1600.0,
+                dMin=5.0,
+                dMax=1020.0,
                 filename=out_dir + name)
     plt.close()
 

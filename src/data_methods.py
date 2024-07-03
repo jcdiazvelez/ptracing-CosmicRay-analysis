@@ -4,6 +4,8 @@ import numpy as np
 import healpy as hp
 from multiprocessing import Pool
 from PathSegment import PathSegment
+import matplotlib.pyplot as plt
+from matplotlib import pylab
 
 
 # Create particle data from raw traces
@@ -102,6 +104,7 @@ def create_maps(nside, bins, obs_parameters, imposed_parameters,
             p_max = item[2]
 
     # Create bins
+    
     bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001),
                             bins + 1)
 
@@ -162,6 +165,88 @@ def create_maps(nside, bins, obs_parameters, imposed_parameters,
     return np.array([reweighed_initial, reweighed_final])
 
 
+def create_weights_v2(nside, bins, obs_parameters, imposed_parameters,
+                      physical_index, particle_dir, particle_file):
+    particles_data = np.load(particle_dir + particle_file, allow_pickle=True)
+    particles = particles_data['particles']
+    npix = hp.nside2npix(nside)
+
+    # Extracting energies from particles
+    energies = particles[:, 2]
+    p_min, p_max = np.min(energies), np.max(energies)
+
+    # Create bins
+    bin_sizes = np.logspace(1.5, 5.5, bins + 1)
+
+    # Initialize maps and counts
+    final_maps = np.zeros((bins, npix))
+    energy_bin_counts = np.zeros((npix, bins))
+    pixel_counts = np.zeros(npix)
+
+    for item in particles:
+        final_pixel = int(item[1])
+        p = item[2]
+        p_bin = np.digitize(p, bin_sizes) - 1  # digitize returns indices starting from 1
+        pixel_counts[final_pixel] += 1.0
+        if 0 <= p_bin < bins:
+            energy_bin_counts[final_pixel, p_bin] += 1.0
+
+    for ipix in range(npix):
+        pixnorm = 1.0 / pixel_counts[ipix]
+        #eweight = np.zeros(bins)
+        #non_zero_counts = energy_bin_counts[ipix] > 0
+        #eweight[non_zero_counts] = 1.0 / energy_bin_counts[ipix][non_zero_counts]
+        eweight = 1.0 / energy_bin_counts[ipix]
+        eweight[np.isinf(eweight)] = 0.0  # Replace infinite values with 0.0
+        eweight_norm = np.sum(eweight)
+        if eweight_norm > 0:
+            eweight /= eweight_norm
+        print("pixnorm/eweight_norm/eweight", pixnorm, eweight_norm, eweight)        
+        for ebin in range(bins):
+            final_maps[ebin, ipix] = pixnorm * eweight[ebin]
+            #print("final_maps[ebin, ipix]", final_maps[ebin, ipix])
+        x_values = np.arange(1, 21)
+        print("final_maps[:,ipix]",final_maps[:,ipix])
+        plt.plot(x_values, final_maps[:,ipix], marker='o', linestyle='-')
+        plt.title('Histogram of boundary maps for all the pixels')
+        plt.xlabel("Energy bins")
+        plt.ylabel("pixnorm * eweight")
+        fig = pylab.figure(1)
+        fig.savefig(f"/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/test_wei_fix_chi2_5/pixel_"+str(ipix)+".png", dpi=250)
+        plt.close()
+
+            # Plot the histograms for all the pixels
+            # pix, edges = np.histogram(final_maps, bins=bin_sizes)
+            # plt.bar(edges[:-1], pix, width=np.diff(edges), edgecolor='black', align='edge')
+            # plt.title('Histogram of boundary maps for all the pixels')
+            # plt.xlabel("Energy bins")
+            # plt.ylabel("Wi")
+            # fig = pylab.figure(1)
+            # fig.savefig(f".png", dpi=250)
+            # plt.close()
+
+    reweighed_particles = [[] for _ in range(npix)]
+
+    for item in particles:
+        initial_pixel = int(item[0])
+        final_pixel = int(item[1])
+        p = item[2]
+        bx, by, bz = item[3], item[4], item[5]
+        p_bin = np.digitize(p, bin_sizes) - 1
+        uniform, dipole = imposed_parameters
+        imposed_weight = uniform + dipole * cos_dipole_f(nside, final_pixel, bx, by, bz)
+        direction_weight = final_maps[p_bin, final_pixel] if 0 <= p_bin < bins else 0
+        momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], physical_index, -1)
+        obs_weight = observational_weight(p, obs_parameters)
+        total_weight = momentum_weight * imposed_weight * obs_weight * direction_weight
+        reweighed_particles[initial_pixel].append([p, total_weight])
+
+    max_length = max(len(sublist) for sublist in reweighed_particles)
+    reweighed_particles_equalized = [sublist + [[p_min, 0.0]] * (max_length - len(sublist)) for sublist in reweighed_particles]
+    return reweighed_particles_equalized
+
+
+
 # Create particle weighting file for KS tests
 def create_weights(nside, bins, obs_parameters, imposed_parameters,
                    physical_index, particle_dir, particle_file):
@@ -181,11 +266,9 @@ def create_weights(nside, bins, obs_parameters, imposed_parameters,
             p_min = item[2]
         elif item[2] > p_max:
             p_max = item[2]
-
     # Create bins
     bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001),
                             bins + 1)
-
     # Create a sky map for each bin, for weighing by energy
     final_maps = np.zeros((bins, npix))
     reweighed_particles = [[] for i in range(npix)]
@@ -202,7 +285,7 @@ def create_weights(nside, bins, obs_parameters, imposed_parameters,
                 break
         particle_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
                                           physical_index, -1)
-        particle_weight *= observational_weight(p, obs_parameters)
+        #particle_weight *= observational_weight(p, obs_parameters)
         final_maps[p_bin][final_pixel] += particle_weight
 
     # Go back through the data and reweigh the initial map. Save the individual
@@ -229,12 +312,14 @@ def create_weights(nside, bins, obs_parameters, imposed_parameters,
         momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
                                           physical_index, -1)
         obs_weight = observational_weight(p, obs_parameters)
+        total_weight = momentum_weight * imposed_weight * obs_weight / direction_weight
+        # print('uniform/dipole/imposed/cos_dipole_f/direction/momentum/obs/total', \
+        #       uniform, dipole, imposed_weight, cos_dipole_f(nside, final_pixel, bx, by, bz), \
+        #       direction_weight, momentum_weight, obs_weight, total_weight)
 
-        reweighed_particles[initial_pixel].append([p, momentum_weight *
-                                                  imposed_weight * obs_weight /
-                                                  direction_weight])
+        reweighed_particles[initial_pixel].append([p, momentum_weight*imposed_weight*obs_weight])
     max_length = max(len(sublist) for sublist in reweighed_particles)
-    reweighed_particles_equalized = [sublist + [[0, 0]] * (max_length - len(sublist)) for sublist in reweighed_particles]
+    reweighed_particles_equalized = [sublist + [[p_min, 0]] * (max_length - len(sublist)) for sublist in reweighed_particles]
     return reweighed_particles_equalized
 
 

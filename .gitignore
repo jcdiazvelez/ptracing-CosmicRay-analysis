@@ -132,3 +132,6 @@ dmypy.json
 *.npz
 
 /src/weigh_energy.py
+/figs
+/archive
+/data

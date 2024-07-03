@@ -4,8 +4,8 @@
         20
     ],
     "imposed_distribution": [
-        0.001,
-        0.001
+        1.0,
+        0.003
     ],
     "observational?": false,
     "observational_parameters": [
@@ -18,21 +18,21 @@
         1.0,
         20.0
     ],
-    "chi_squared?": true,
-    "chi_squared_width": 5,
+    "chi_squared?": false,
+    "chi_squared_width": 3,
     "chi_squared_limits": [
         1.0,
         20.0
     ],
-    "hist_on_pixel?": false,
-    "hist_on_pixel_width": 1,
-    "hist_on_pixel_limits": [
-        1.0,
-        20.0
+    "test_weights?": true,
+    "test_weights_width": 5,
+    "test_weights_limits": [
+        0.1,
+        200.0
     ],
-    "plot_unweighted?": false,
+    "plot_unweighted?": true,
     "plot_imposed?": false,
-    "physical_index": 1.0,
+    "physical_index": -1.0,
     "raw_data_location": "../data/raw/",
     "particle_data_location": "../data/particles/",
     "weighted_data_location": "../data/weighted/",

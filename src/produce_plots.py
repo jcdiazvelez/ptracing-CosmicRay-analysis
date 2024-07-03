@@ -32,68 +32,17 @@ for file in map_files:
     #     ks_map = ks_map_data["kolmogorov"]
     #     plot_kolmogorov(ks_map, file_plot_dir)
 
-    # if file_ID == "chi_squared_red":
+    # if file_ID == "test_weights_phy_ind_minus1_final_pix":
     #     chi_squared_data = np.load(file, allow_pickle=True)
-    #     chi_squared_map = chi_squared_data["chi_squared"]
-    #     plot_chi_squared(chi_squared_map, file_plot_dir, 'chi_squared_reduced')
-    #     plot_histogram_chi2sum(chi_squared_map, file_plot_dir, 'chi_squared_red_hist')
-    #     #plot_histogram_whole_skymap(chi_squared_map, file_plot_dir, 'chi_squared_red_hist')
+    #     chi_squared_map = chi_squared_data["test_weights"]
+    #     plot_chi_squared(chi_squared_map, file_plot_dir, 'test_weights_phy_ind_minus1_final_pix')
+    #     #plot_histogram_chi2sum(chi_squared_map, file_plot_dir, 'chi_squared_updated_hist')
 
-    # if file_ID == "chi_squared_norm_red":
-    #     chi_squared_data = np.load(file, allow_pickle=True)
-    #     chi_squared_map = chi_squared_data["chi_squared"]
-    #     plot_chi_squared(chi_squared_map, file_plot_dir, 'chi_squared_norm_reduced')
-    #     plot_histogram_chi2sum(chi_squared_map, file_plot_dir, 'chi_squared_norm_red_hist')
-
-    # if file_ID == "chi_squared_red_fix":
-    #     chi_squared_data = np.load(file, allow_pickle=True)
-    #     chi_squared_map = chi_squared_data["chi_squared"]
-    #     plot_chi_squared(chi_squared_map, file_plot_dir, 'chi_squared_norm_red_fix')
-    #     plot_histogram_chi2sum(chi_squared_map, file_plot_dir, 'chi_squared_norm_red_fix_hist')
-
-    if file_ID == "chi_squared_updated":
+    if file_ID == "test_wei_fix_chi2_3":
         chi_squared_data = np.load(file, allow_pickle=True)
-        chi_squared_map = chi_squared_data["chi_squared"]
-        plot_chi_squared(chi_squared_map, file_plot_dir, 'chi_squared_updated')
+        chi_squared_map = chi_squared_data["test_weights"]
+        plot_chi_squared(chi_squared_map, file_plot_dir, 'test_wei_fix_chi2_3')
         #plot_histogram_chi2sum(chi_squared_map, file_plot_dir, 'chi_squared_updated_hist')
-
-    # if file_ID == "chi_squared_red_fix_p-values":
-    #     chi_squared_data = np.load(file, allow_pickle=True)
-    #     chi_squared_map = chi_squared_data["chi_squared"]
-    #     plot_chi_squared(chi_squared_map, file_plot_dir, 'chi_squared_red_fix_p-values')
-    #     #plot_histogram_chi2sum(chi_squared_map, file_plot_dir, 'chi_squared_red_fix_p-values_hist')
-
-    # if file_ID == "chi_squared_red_fix_p-values_mod":
-    #     chi_squared_data = np.load(file, allow_pickle=True)
-    #     chi_squared_map = chi_squared_data["chi_squared"]
-    #     plot_chi_squared(chi_squared_map, file_plot_dir, 'chi_squared_red_fix_p-values_mod')
-    #     #plot_histogram_chi2sum(chi_squared_map, file_plot_dir, 'chi_squared_red_fix_p-values_hist_mod')
-
-    # if file_ID == "chi_squared_p-values":
-    #     chi_squared_data = np.load(file, allow_pickle=True)
-    #     chi_squared_map = chi_squared_data["chi_squared"]
-    #     plot_chi_squared(chi_squared_map, file_plot_dir, 'chi_squared_p-values')
-    #     #plot_histogram_chi2sum(chi_squared_map, file_plot_dir, 'chi_squared_p-values_hist')
-
-    # if file_ID == "chi_squared_not_rot":
-    #     chi_squared_data = np.load(file, allow_pickle=True)
-    #     chi_squared_map = chi_squared_data["chi_squared"]
-    #     plot_chi_squared(chi_squared_map, file_plot_dir, 'chi_squared_not_rot')
-    #     plot_histogram_whole_skymap(chi_squared_map, file_plot_dir, 'chi_squared_not_rot')
-
-    # if file_ID == "weighted_particles":
-    #     hist_on_pixel_data = np.load(file, allow_pickle=True)
-    #     hist_on_pixel_map = hist_on_pixel_data["weighted_particles_map"]
-    #     limits = [1.0, 20.0]
-    #     width = 1
-    #     plot_histogram(1772, hist_on_pixel_map, limits, width, file_plot_dir)
-
-    # if file_ID == "weighted_particles_rot":
-    #     hist_on_pixel_data = np.load(file, allow_pickle=True)
-    #     hist_on_pixel_map = hist_on_pixel_data["weighted_particles_map"]
-    #     limits = [1.0, 20.0]
-    #     width = 1
-    #     plot_histogram(2570, hist_on_pixel_map, limits, width, file_plot_dir)
 
     #else:
         # flux_maps_data = np.load(file, allow_pickle=True)

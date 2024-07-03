@@ -2,8 +2,8 @@ import json
 import os
 import numpy as np
 
-from data_methods import create_particles, create_maps, create_weights, rotate_map
-from statistical_methods import perform_kolmogorov_smirnov, perform_chi_squared
+from data_methods import create_particles, create_maps, create_weights, create_weights_v2, rotate_map
+from statistical_methods import perform_kolmogorov_smirnov, perform_chi_squared, perform_test_weights, perform_test_weights_v2
 
 # Import configuration data for the job, and set up useful variables
 
@@ -30,7 +30,7 @@ use_observational = job_data["observational?"]
 obs_parameters = job_data["observational_parameters"]
 run_kolmogorov = job_data["kolmogorov?"]
 run_chi_squared = job_data["chi_squared?"]
-run_hist_on_pixel = job_data["hist_on_pixel?"]
+run_test_weights = job_data["test_weights?"]
 run_unweighted = job_data["plot_unweighted?"]
 physical_index = job_data["physical_index"]
 maps_dir = job_data["map_data_location"]
@@ -79,19 +79,6 @@ if run_kolmogorov:
                         kolmogorov=kolmogorov_map)
 
 # Create Chi-squared maps if asked
-# if run_chi_squared:
-#     width = job_data["chi_squared_width"]
-#     limits = job_data["chi_squared_limits"]
-#     weighted_particles = create_weights(nside, 50, obs_parameters,
-#                                           imposed_parameters, physical_index,
-#                                           particle_dir, particle_file)
-#     weighted_particles = np.array(weighted_particles)
-#     chi_squared_map = perform_chi_squared(weighted_particles, limits,
-#                                                 width)
-    # chi_squared_map = rotate_map(chi_squared_map)
-    # np.savez_compressed(maps_dir + "chi_squared_updated.npz",
-    #                     chi_squared=chi_squared_map)
-
 if run_chi_squared:
     width = job_data["chi_squared_width"]
     limits = job_data["chi_squared_limits"]
@@ -102,8 +89,23 @@ if run_chi_squared:
     chi_squared_map = perform_chi_squared(weighted_particles, limits,
                                                 width)
     chi_squared_map = rotate_map(chi_squared_map)
-    np.savez_compressed(maps_dir + "chi_squared_april3.npz",
+    np.savez_compressed(maps_dir + "chi_squared_april30.npz",
                         chi_squared=chi_squared_map)
+    
+if run_test_weights:
+    width = job_data["test_weights_width"]
+    limits = job_data["test_weights_limits"]
+    figs_dir = job_data["output_location"]
+    name = "test_wei_fix_chi2_5"
+    fig_path = figs_dir + name  + '/'
+    weighted_particles = create_weights_v2(nside, 20, obs_parameters,
+                                          imposed_parameters, physical_index,
+                                          particle_dir, particle_file)
+    weighted_particles = np.array(weighted_particles)
+    test_weights_hist = perform_test_weights_v2(weighted_particles, limits, width, fig_path, name)
+    test_weights_hist = rotate_map(test_weights_hist)
+    np.savez_compressed(maps_dir + name + ".npz",
+                        test_weights=test_weights_hist)
 
 # if run_hist_on_pixel:
 #     width = job_data["hist_on_pixel_width"]
