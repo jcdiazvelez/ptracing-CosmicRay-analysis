@@ -98,14 +98,11 @@ if run_test_weights:
     figs_dir = job_data["output_location"]
     name = "test_wei_fix_chi2_5"
     fig_path = figs_dir + name  + '/'
-    weighted_particles = create_weights_v2(nside, 20, obs_parameters,
-                                          imposed_parameters, physical_index,
-                                          particle_dir, particle_file)
+    weighted_particles = create_weights_v2(nside, 20, obs_parameters, imposed_parameters, physical_index, particle_dir, particle_file)
     weighted_particles = np.array(weighted_particles)
     test_weights_hist = perform_test_weights_v2(weighted_particles, limits, width, fig_path, name)
     test_weights_hist = rotate_map(test_weights_hist)
-    np.savez_compressed(maps_dir + name + ".npz",
-                        test_weights=test_weights_hist)
+    np.savez_compressed(maps_dir + name + ".npz", test_weights=test_weights_hist)
 
 # if run_hist_on_pixel:
 #     width = job_data["hist_on_pixel_width"]

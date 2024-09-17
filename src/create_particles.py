@@ -18,7 +18,7 @@ parser.add_argument("-N", "--nside", type=int, default="16",
                     help="plot resolution")
 parser.add_argument("-r", "--radius", type=int, default="50000",
                     help="termination radius")
-parser.add_argument("-g", "--phys_index", type=float, default="-2.7",
+parser.add_argument("-g", "--phys_index", type=float, default="-2.6",
                     help="power law index for physical cosmic ray distribution")
 parser.add_argument("-P", "--model_index", type=float, default="-1.0",
                     help="power law index for modelled cosmic ray distribution")
