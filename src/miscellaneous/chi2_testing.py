@@ -6,6 +6,7 @@ import random
 import scipy.stats 
 from tqdm import tqdm
 import gc
+import pickle
 
 # Probability density function for power law functions
 def powerlaw_pdf(x, x_min, x_max, power):
@@ -32,13 +33,19 @@ def generate_normal_weights(mean, std_dev, sample_size):
     weights = np.random.normal(mean, std_dev, sample_size)
     return (weights - np.min(weights)) / (np.max(weights) - np.min(weights)) if np.max(weights) > np.min(weights) else weights
 
-def hist_plot(edges, Wi_on, Wi_off, S2i_on, S2i_off):
+def hist_plot(edges, Wi_on, Wi_off, S2i_on, S2i_off, di2):
     plt.figure(figsize=(10, 6))
-    plt.errorbar(edges[1:], Wi_on, yerr=np.sqrt(S2i_on))
-    plt.errorbar(edges[1:], Wi_off, yerr=np.sqrt(S2i_off))
+    # plt.errorbar(edges[1:], Wi_on, yerr=np.sqrt(S2i_on))
+    # plt.errorbar(edges[1:], Wi_off, yerr=np.sqrt(S2i_off))
+    # plt.errorbar(edges[1:], np.abs(Wi_on - Wi_off), yerr=np.sqrt(S2i_on))
+    # plt.plot(edges[1:], np.abs(Wi_on - Wi_off), label = 'Wi_on - Wi_off')
+    plt.plot(edges[1:], np.power((Wi_on - Wi_off), 2), label = '(Wi_on - Wi_off)^2')
+    # plt.plot(edges[1:], np.sqrt(S2i_on), label = 'S2i_on')
+    # plt.plot(edges[1:], np.sqrt(S2i_off), label = 'S2i_off')
+    plt.plot(edges[1:], di2, label = 'di2')
     plt.title('Error Wi_on vs Wi_off')
-    plt.xlabel('Value')
-    plt.ylabel('Error')
+    plt.xlabel('Energy bins')
+    plt.ylabel('Weighted counts')
     plt.xscale('log')
     plt.yscale('log')
     plt.legend()
@@ -78,6 +85,10 @@ def test_weights_v3(data1, data2, wei1, wei2):
     wei2_norm = wei2 / norm2
 
     # Histogram
+    N_on, edges = np.histogram(data1, bins=ebins)
+    N_off, _ = np.histogram(data2, bins=ebins)
+    mask = np.logical_and(N_on>20, N_off>20)
+
     Wi_on, edges = np.histogram(data1, bins=ebins, weights=wei1_norm)
     S2i_on, _ = np.histogram(data1, bins=ebins, weights=np.power(wei1_norm, 2))
     Wi_off, _ = np.histogram(data2, bins=ebins, weights=wei2_norm)
@@ -92,12 +103,13 @@ def test_weights_v3(data1, data2, wei1, wei2):
     di2[~(valid_Wi_on & valid_Wi_off)] = np.inf
 
     # Chi2 calculation
-    chi2sum = np.sum(np.power((Wi_on - Wi_off), 2) / di2)
+    chi2sum = np.sum(np.power((Wi_on[mask] - Wi_off[mask]), 2) / di2[mask])
     chi2sum_red = chi2sum / (len(ebins) - 1)
     # Plots on/off histograms per pixel
+    # hist_plot(edges, Wi_on, Wi_off, S2i_on, S2i_off)
     # if chi2sum > 90.0:
-    #     hist_plot(edges, Wi_on, Wi_off, S2i_on, S2i_off)
-    return chi2sum_red
+    #     hist_plot(edges, Wi_on, Wi_off, S2i_on, S2i_off, di2)
+    return chi2sum
 
 def generic_chi2_test(sample_size, low, high):
     # Generate an array with random normal distributions at the boundary layer
@@ -199,6 +211,7 @@ def perform_test_weights_v3(particles, limits, width):
     #print('energy limits lower/upper',lower, upper)
 
     chi2sum = []
+    #for i in tqdm(range(256,npix)):
     for i in tqdm(range(npix)):
         strip_distribution, _ = get_strip_distribution(i, particles, nside, width)
         strip_distribution = impose_energy_range(strip_distribution, lower, upper)
@@ -323,14 +336,17 @@ def load_npz_file_as_ndarray(file_path):
         return None
 
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&TEST PARTICLE DATA&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
-particles_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/phyindex_2p6_nside8_newMap.npz"
+particles_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/phyindex_2p6_nside8_rand-finalpix.npz"
+with open(particles_dir, 'rb') as f:
+    particles = pickle.load(f)
+
 particles = load_npz_file_as_ndarray(particles_dir)
 figs_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/chi2_debug/"
 maps_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/"
 
 chi2_test = perform_test_weights_v3(particles, [0.1, 100], 5)
-np.savez_compressed(maps_dir + "chi2_2p6_nside8_realData" + ".npz", data=chi2_test)
-# chi2_pdf_plot(chi2_test)
-plot_chi_squared(chi2_test, figs_dir, "chi2_skymap_1")
+#np.savez_compressed(maps_dir + "chi2_2p6_nside8_rand-finalpix" + ".npz", data=chi2_test)
+chi2_pdf_plot(chi2_test)
+# plot_chi_squared(chi2_test, figs_dir, "chi2_skymap_1")
 # chi2_test2 = generic_shuffle_test(particles, [0.1, 100], 5, 10)
 # chi2_pdf_plot(chi2_test2)

@@ -14,11 +14,11 @@ parser.add_argument("-o", "--output", type=str, default='../data/particles/',
                     help="Output directory for particle data")
 parser.add_argument("-p", "--path", type=str, default="../data/raw/",
                     help="Path to data")
-parser.add_argument("-N", "--nside", type=int, default="16",
+parser.add_argument("-N", "--nside", type=int, default="4",
                     help="plot resolution")
 parser.add_argument("-r", "--radius", type=int, default="50000",
                     help="termination radius")
-parser.add_argument("-g", "--phys_index", type=float, default="-2.6",
+parser.add_argument("-g", "--phys_index", type=float, default="-1",
                     help="power law index for physical cosmic ray distribution")
 parser.add_argument("-P", "--model_index", type=float, default="-1.0",
                     help="power law index for modelled cosmic ray distribution")

@@ -19,13 +19,13 @@
         20.0
     ],
     "chi_squared?": false,
-    "chi_squared_width": 3,
+    "chi_squared_width": 4,
     "chi_squared_limits": [
         1.0,
         20.0
     ],
     "test_weights?": true,
-    "test_weights_width": 5,
+    "test_weights_width": 4,
     "test_weights_limits": [
         0.1,
         200.0
