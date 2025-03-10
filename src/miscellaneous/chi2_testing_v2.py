@@ -55,42 +55,31 @@ def generate_normal_weights(mean, std_dev, sample_size):
     return (weights - np.min(weights)) / (np.max(weights) - np.min(weights)) if np.max(weights) > np.min(weights) else weights
 
 # Improved plot function with log-log scaling for energy and weight distributions
-def plot_energy_weight_histograms(energies, weights):
+def plot_energy_histogram(energies, filename="energy_histogram.png"):
     """
-    Plots histograms of energy and weight distributions.
+    Plots a histogram of energy distribution and saves the figure.
     Filters near-zero values to avoid log(0) issues.
     
     Parameters:
     - energies: array with energy values.
-    - weights: array with weight values.
+    - filename: name of the file where the figure will be saved (default: 'energy_histogram.png').
     """
     energies = energies[energies > 0]  # Filter to avoid log(0)
-    weights = weights[weights > 0]     # Same filter for weights
 
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(6, 5))
 
     # Histogram for energies
-    plt.subplot(1, 2, 1)
     plt.hist(energies.flatten(), bins=DEGREES_OF_FREEDOM+1, log=True)
     plt.title('Energy Distribution')
-    # plt.title('Distribución de energía de las partículas')
     plt.xlabel('Energy')
-    # plt.xlabel('Energía [GeV]')
     plt.ylabel('Frequency of events')
-    # plt.ylabel('Frecuencia de eventos')
-
-    # Histogram for weights
-    plt.subplot(1, 2, 2)
-    plt.hist(weights.flatten(), bins=DEGREES_OF_FREEDOM+1, log=True)
-    plt.title('Weight Distribution')
-    #plt.title('Distribución de los pesos totales de las partículas')
-    plt.xlabel('Weight')
-    #plt.xlabel('Pesos')
-    plt.ylabel('Frequency of events')
-    #plt.ylabel('Frecuencia de eventos')
 
     plt.tight_layout()
+    
+    # Save the figure
+    plt.savefig(filename, dpi=300, bbox_inches='tight')  
     plt.show()
+
 
 # Chi² calculation with control for memory
 def generic_shuffle_test(particles, limits, width, ndist):
@@ -257,8 +246,8 @@ def test_weights_v3(data1, data2, wei1, wei2):
     # Histogram
     N_on, edges = np.histogram(data1, bins=ebins)
     N_off, _ = np.histogram(data2, bins=ebins)
-    # if (N_on < 20).any() or (N_off < 20).any():
-    #     print("CONDITION NOT MET")
+    if (N_on < 20).any() or (N_off < 20).any():
+        print("CONDITION NOT MET")
     mask = np.logical_and(N_on > 20, N_off > 20)
 
     Wi_on, edges = np.histogram(data1, bins=ebins, weights=wei1_norm)
@@ -276,10 +265,12 @@ def test_weights_v3(data1, data2, wei1, wei2):
 
     # Chi2 calculation
     chi2sum = np.sum(np.power((Wi_on[mask] - Wi_off[mask]), 2) / di2[mask])
-    if chi2sum >= 10000:
+    if chi2sum <= 40.0:
         print('CHI2SUM', chi2sum)
-        plot_energy_weight_histograms(data1, wei1)
-        plot_energy_weight_histograms(data2, wei2)
+        fig_name1 ='/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/energy_hist_Wion_chi2-.png'
+        fig_name2 ='/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/energy_hist_Wioff_chi2-.png'
+        plot_energy_histogram(data1, fig_name1)
+        plot_energy_histogram(data2, fig_name2)
     # return chi2sum
     return np.sum(Wi_on[mask])
 
@@ -395,10 +386,10 @@ if particles is not None:
     #plot_energy_weight_histograms(energies, weights)
 
     # Perform Chi² test and plot results
-    chi2_result = perform_test_weights_v3(particles, [5, 30], 1)
+    chi2_result = perform_test_weights_v3(particles, [0.1, 100], 4)
     chi2_result = rotate_map(chi2_result)
-    np.savez_compressed('/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/' + 'Wion-sum_nside=16_bins=120_pwrind=-1_pix=1_real-mapping_energy-5-30' + ".npz", chi2=chi2_result)
-    plot_chi_squared(chi2_result, file_plot_dir, 'skymap_Wion-sum_nside=16_bins=120_pwrind=-1_pix=1_real-mapping_energy-5-30')
+    #np.savez_compressed('/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/' + 'Wion-sum_nside=16_bins=120_pwrind=-1_pix=1_real-mapping_energy-5-30' + ".npz", chi2=chi2_result)
+    plot_chi_squared(chi2_result, file_plot_dir, 'skymap_chi2_nside=16_bins=120_pwrind=-1_pix=4_real-mapping_energy-0p1-100')
     chi2_pdf_plot(chi2_result)
 else:
     print("Data loading failed.")
