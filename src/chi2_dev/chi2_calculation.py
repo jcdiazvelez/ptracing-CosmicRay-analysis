@@ -473,8 +473,8 @@ def perform_test_weights_v3(particles, limits, width):
     npix = len(particles)
     nside = hp.npix2nside(npix)
 
-    lower = limits[0] / (m_p * c * c / (e * 10 ** 12))
-    upper = limits[1] / (m_p * c * c / (e * 10 ** 12))
+    lower = limits[0] #/ (m_p * c * c / (e * 10 ** 12))
+    upper = limits[1] #/ (m_p * c * c / (e * 10 ** 12))
 
     chi2sum = []
     for i in tqdm(range(npix)):

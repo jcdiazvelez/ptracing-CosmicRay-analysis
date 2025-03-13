@@ -48,7 +48,8 @@ def observational_weight(particle_energy, obs_parameters):
         c = 299792458  # Speed of light in m/s
         e = 1.60217663 * 10 ** (-19)  # Elementary charge in Coulombs
         m_p = 1.67262192 * 10 ** (-27)  # Proton mass in kg
-        energy_factor = 1 / (m_p * c * c / (e * 10 ** 12))
+        #energy_factor = 1 / (m_p * c * c / (e * 10 ** 12))
+        energy_factor = 1.
 
         sigma = obs_parameters[0]  # Standard deviation of Gaussian
         mid_energy = np.log10(obs_parameters[1] * energy_factor)  # Mean value of Gaussian
@@ -88,19 +89,18 @@ def compute_particle_weights(nside, bins, obs_parameters, imposed_parameters, ph
 
     # Normalize weights by pixel and energy bin
     for ipix in range(npix):
-        # Calculate normalization factor for the pixel based on the particle count
-        pixnorm = 1.0 / pixel_counts[ipix] if pixel_counts[ipix] > 0 else 0
         # Calculate weights for each energy bin in the pixel
         eweight = 1.0 / energy_bin_counts[ipix]
         # Replace infinite values with zero to avoid computational errors
         eweight[np.isinf(eweight)] = 0.0
         # Normalize energy weights by their sum
         eweight_norm = np.sum(eweight)
+        # Calculate normalization factor for the pixel based on the particle count
         if eweight_norm > 0:
             eweight /= eweight_norm  
         # Store the final normalized weight in the final_maps array
         for ebin in range(bins):
-            final_maps[ebin, ipix] = pixnorm * eweight[ebin]
+            final_maps[ebin, ipix] = eweight[ebin]
 
     reweighed_particles = [[] for _ in range(npix)]  # Initialize reweighted particles list
 
@@ -109,10 +109,12 @@ def compute_particle_weights(nside, bins, obs_parameters, imposed_parameters, ph
         initial_pixel = int(item[0])  # The original pixel where the particle originated
         final_pixel = int(item[1])  # The pixel to which the particle is mapped
         p = item[2]  # The energy of the particle
-        bx, by, bz = item[3], item[4], item[5]  # The directional components of the particle's momentum
+        # The directional components of B-field
+        # The assumption is that B at final radius is constant
+        bx, by, bz = item[3], item[4], item[5]  
         p_bin = np.digitize(p, energy_bins) - 1  # Determine which energy bin the particle falls into
 
-        imposed_weight = imposed_parameters[0] + imposed_parameters[1] * cos_dipole_f(nside, final_pixel, bx, by, bz)
+        imposed_weight = 1.0 + imposed_parameters[1] * cos_dipole_f(nside, final_pixel, bx, by, bz)
         direction_weight = final_maps[p_bin, final_pixel] if 0 <= p_bin < bins else 0
         momentum_weight = weight_powerlaw(p, energy_bins[0], energy_bins[-1], physical_index, -1)
         obs_weight = observational_weight(p, obs_parameters)
