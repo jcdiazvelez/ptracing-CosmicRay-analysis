@@ -556,15 +556,15 @@ def test_weights_v3(data1, data2, wei1, wei2):
     chi2sum = np.sum(np.power((Wi_on[mask] - Wi_off[mask]), 2) / di2[mask])
     
     # Optionally plot histograms if Chi² sum is below a threshold
-    # if chi2sum <= 40.0:
-    #     print('CHI2SUM', chi2sum)
-    #     fig_name1 ='/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/energy_hist_Wion_chi2-.png'
-    #     fig_name2 ='/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/energy_hist_Wioff_chi2-.png'
-    #     plot_energy_histogram(data1, fig_name1)
-    #     plot_energy_histogram(data2, fig_name2)
+    if chi2sum <= 40.0:
+        print('CHI2SUM', chi2sum)
+        fig_name1 ='/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/energy_hist_Wion_chi2-.png'
+        fig_name2 ='/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/energy_hist_Wioff_chi2-.png'
+        plot_energy_histogram(data1, fig_name1)
+        plot_energy_histogram(data2, fig_name2)
     
     # Alternative return: Chi² sum or total weight in valid bins
-    return chi2sum
+    return np.sum(Wi_on[mask])
 
 
 def plot_skymap(skymap, title, proj='C', label='', filename=None, 
@@ -737,7 +737,7 @@ def rotate_map(old_map):
 # Example usage of the improved functions
 
 # Define the path to the particle data file (.npz format)
-particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/final_mapping_phyind-2p6_all-weights.npz'
+particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/rewei_part_nside=16_dof=120_pwrind=-1_real-mapping.npz'
 
 # Load the particle data using the improved load_data function
 particles = load_data(particles_dir)
@@ -757,7 +757,7 @@ if particles is not None:
     
     # Perform the Chi² test using the perform_test_weights_v3 function
     # The test uses an energy range of [0.1, 100] and a strip width of 4 pixels
-    chi2_result = perform_test_weights_v3(particles, [1.0, 100], 4)
+    chi2_result = perform_test_weights_v3(particles, [0.1, 100], 4)
     
     # Rotate the Chi² map to equatorial coordinates
     chi2_result = rotate_map(chi2_result)
@@ -769,12 +769,11 @@ if particles is not None:
     
     # Plot the Chi² skymap and save the image to the specified directory
     plot_chi_squared(chi2_result, file_plot_dir, 
-                     'skymap_chi2_final-mapping_pwrind=-2p6_all-weights')
+                     'skymap_chi2_nside=16_bins=120_pwrind=-1_pix=4_real-mapping_energy-0p1-100')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
     chi2_pdf_plot(chi2_result)
 
 else:
     print("Data loading failed.")
-
 

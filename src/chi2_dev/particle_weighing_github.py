@@ -108,7 +108,6 @@ def compute_particle_weights(nside, bins, obs_parameters, imposed_parameters, ph
     for item in particles:
         initial_pixel = int(item[0])  # The original pixel where the particle originated
         final_pixel = int(item[1])  # The pixel to which the particle is mapped
-        # final_pixel = np.random.randint(npix)
         p = item[2]  # The energy of the particle
         # The directional components of B-field
         # The assumption is that B at final radius is constant
@@ -123,24 +122,4 @@ def compute_particle_weights(nside, bins, obs_parameters, imposed_parameters, ph
         total_weight = momentum_weight * imposed_weight * obs_weight * direction_weight
         reweighed_particles[initial_pixel].append([p, total_weight])  # Store final weight
 
-    return convert_to_numpy_array(reweighed_particles)  
-
-def convert_to_numpy_array(reweighed_particles):
-    max_length = max(len(sublist) for sublist in reweighed_particles)
-    padded_array = np.array(
-        [sublist + [[0, 0]] * (max_length - len(sublist)) for sublist in reweighed_particles],
-        dtype=np.float32
-    )
-    return padded_array
-
-def save_results(reweighed_particles_array, output_file):
-    np.savez_compressed(output_file, reweighed_particles=reweighed_particles_array)
-    print(f"Results saved to {output_file}")
-
-particle_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/"
-particle_file = "nside=16.npz"
-output_file = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/final_mapping_phyind-2p6_all-weights.npz"
-
-# Execute function and save results
-result = compute_particle_weights(16, 120, [-1, -1], [1.0, 0.003], -2.6, particle_dir, particle_file, output_file)
-save_results(result, output_file)
+    return np.array(reweighed_particles)
