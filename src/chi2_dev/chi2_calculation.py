@@ -488,6 +488,23 @@ def perform_test_weights_v3(particles, limits, width):
         chi2sum.append(chi2)
     return chi2sum
 
+# Function to compute observational weights for particles based on a Gaussian distribution
+def observational_weight(particle_energy, obs_parameters):
+    if obs_parameters[0] == -1 and obs_parameters[1] == -1:
+        return 1  # Default weight if parameters are not defined
+    else:
+        c = 299792458  # Speed of light in m/s
+        e = 1.60217663 * 10 ** (-19)  # Elementary charge in Coulombs
+        m_p = 1.67262192 * 10 ** (-27)  # Proton mass in kg
+        #energy_factor = 1 / (m_p * c * c / (e * 10 ** 12))
+        energy_factor = 1.
+
+        sigma = obs_parameters[0]  # Standard deviation of Gaussian
+        mid_energy = np.log10(obs_parameters[1] * energy_factor)  # Mean value of Gaussian
+        logged_energy = np.log10(particle_energy)
+
+        return np.exp(-0.5 * np.square((logged_energy - mid_energy) / sigma)) / (sigma * np.sqrt(2 * np.pi))
+
 # Test and plot functions
 def test_weights_v3(data1, data2, wei1, wei2):
     """
@@ -517,8 +534,8 @@ def test_weights_v3(data1, data2, wei1, wei2):
     # Normalize weights to ensure sum equals 1
     norm1 = np.sum(wei1)
     norm2 = np.sum(wei2)
-    wei1_norm = wei1 / norm1
-    wei2_norm = wei2 / norm2
+    wei1_norm = (wei1 / norm1)*observational_weight(data1, [0.25,1e3])
+    wei2_norm = (wei2 / norm2)*observational_weight(data2, [0.25,1e3])
 
     # Create histograms for unweighted data to identify valid bins
     N_on, edges = np.histogram(data1, bins=ebins)
@@ -737,7 +754,7 @@ def rotate_map(old_map):
 # Example usage of the improved functions
 
 # Define the path to the particle data file (.npz format)
-particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/final_mapping_phyind-2p6_all-weights.npz'
+particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/real_mapping_phyind-2p6_all-weights_gaussian-centered-100TeV.npz'
 
 # Load the particle data using the improved load_data function
 particles = load_data(particles_dir)
@@ -756,8 +773,8 @@ if particles is not None:
     # plot_energy_weight_histograms(energies, weights)
     
     # Perform the Chi² test using the perform_test_weights_v3 function
-    # The test uses an energy range of [0.1, 100] and a strip width of 4 pixels
-    chi2_result = perform_test_weights_v3(particles, [1.0, 100], 4)
+    # The test uses an energy range of [0.1, 100] and a strip width of 1 pixels
+    chi2_result = perform_test_weights_v3(particles, [0.1, 100], 1)
     
     # Rotate the Chi² map to equatorial coordinates
     chi2_result = rotate_map(chi2_result)
@@ -769,7 +786,7 @@ if particles is not None:
     
     # Plot the Chi² skymap and save the image to the specified directory
     plot_chi_squared(chi2_result, file_plot_dir, 
-                     'skymap_chi2_final-mapping_pwrind=-2p6_all-weights')
+                     'skymap_chi2_real-mapping_pwrind=-2p6_all-weights_gaussian-centered-100TeV')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
     chi2_pdf_plot(chi2_result)

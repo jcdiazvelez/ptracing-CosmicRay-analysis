@@ -14,7 +14,7 @@ parser.add_argument("-o", "--output", type=str, default='../data/particles/',
                     help="Output directory for particle data")
 parser.add_argument("-p", "--path", type=str, default="../data/raw/",
                     help="Path to data")
-parser.add_argument("-N", "--nside", type=int, default="4",
+parser.add_argument("-N", "--nside", type=int, default="32",
                     help="plot resolution")
 parser.add_argument("-r", "--radius", type=int, default="50000",
                     help="termination radius")
