@@ -58,7 +58,7 @@ def observational_weight(particle_energy, obs_parameters):
         return np.exp(-0.5 * np.square((logged_energy - mid_energy) / sigma)) / (sigma * np.sqrt(2 * np.pi))
 
 # Function to generate normalized weights for cosmic ray particles
-def compute_particle_weights(nside, bins, obs_parameters, imposed_parameters, physical_index, particle_dir, particle_file, output_file):
+def compute_particle_weights(nside, bins, imposed_parameters, physical_index, particle_dir, particle_file, output_file):
     try:
         particles_data = np.load(particle_dir + particle_file, allow_pickle=True)  # Load particle data
     except FileNotFoundError:
@@ -72,7 +72,11 @@ def compute_particle_weights(nside, bins, obs_parameters, imposed_parameters, ph
     npix = hp.nside2npix(nside)  # Compute total number of pixels
 
     energies = particles[:, 2]  # Extract particle energies
-    energy_bins = np.logspace(1.5, 5.5, bins + 1)  # Create logarithmic energy bins
+    energy_bins = np.logspace(np.log10(min(energies)), np.log10(max(energies)), bins + 1)  # Create logarithmic energy bins
+    print('max energy', max(energies)) # ~500000
+    print('min energy', min(energies)) # ~32.0
+    print('np.log10(min(energies))', np.log10(min(energies))) # ~1.505
+    print('np.log10(max(energies))', np.log10(max(energies))) # ~5.699
 
     final_maps = np.zeros((bins, npix))  # Initialize weight maps
     energy_bin_counts = np.zeros((npix, bins))  # Store energy bin counts per pixel
@@ -118,7 +122,6 @@ def compute_particle_weights(nside, bins, obs_parameters, imposed_parameters, ph
         imposed_weight = 1.0 + imposed_parameters[1] * cos_dipole_f(nside, final_pixel, bx, by, bz)
         direction_weight = final_maps[p_bin, final_pixel] if 0 <= p_bin < bins else 0
         momentum_weight = weight_powerlaw(p, energy_bins[0], energy_bins[-1], physical_index, -1)
-        #obs_weight = observational_weight(p, obs_parameters)
 
         total_weight = momentum_weight * imposed_weight * direction_weight
         reweighed_particles[initial_pixel].append([p, total_weight])  # Store final weight
@@ -139,8 +142,8 @@ def save_results(reweighed_particles_array, output_file):
 
 particle_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/"
 particle_file = "nside=32.npz"
-output_file = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/real_mapping_phyind-2p6_all-weights_gaussian-centered-100TeV.npz"
+output_file = particle_dir+"real_mapping_phyind-2p6_all-weights_nside=32.npz"
 
 # Execute function and save results
-result = compute_particle_weights(32, 120, [0.5, 1e5], [1.0, 0.001], -2.6, particle_dir, particle_file, output_file)
+result = compute_particle_weights(32, 120, [1.0, 0.001], -2.6, particle_dir, particle_file, output_file)
 save_results(result, output_file)

@@ -406,38 +406,39 @@ def impose_energy_range(distribution, min_energy, max_energy):
     return np.array([energies[indices], weights[indices]])
 
 # Chi² PDF plot function
-def chi2_pdf_plot(chi2_concat):
+def chi2_pdf_plot(chi2_concat, save_path=None):
     """
     Plots a Probability Density Function (PDF) of Chi² values and compares it 
     to the theoretical Chi² distribution.
 
     Parameters:
     - chi2_concat (list or array-like): List of calculated Chi² values.
+    - dof (int): Degrees of freedom for the theoretical Chi² distribution.
+    - save_path (str, optional): Path to save the plotted figure. If None, the plot is displayed.
 
     The function generates a log-log plot comparing the empirical distribution of
-    Chi² values to the expected theoretical Chi² PDF with the specified degrees of freedom.
+    Chi² values to the expected theoretical Chi² PDF.
     """
-
     # Define logarithmically spaced bins for the histogram
     xbins = np.logspace(-2, 3, 100)
 
     # Calculate the histogram of the Chi² values, normalized to form a probability density
     hist, edges = np.histogram(chi2_concat, bins=xbins, density=True)
 
-    # Create a theoretical Chi² distribution with a defined number of degrees of freedom
+    # Create a theoretical Chi² distribution
     rv = scipy.stats.chi2(DEGREES_OF_FREEDOM)
 
-    # Initialize the plot with a defined size
+    # Initialize the plot
     plt.figure(figsize=(10, 6))
 
-    # Plot the theoretical Chi² probability density function
+    # Plot the theoretical Chi² PDF
     plt.plot(xbins, rv.pdf(xbins), 'k-', lw=2, 
-             label=f'pdf ({DEGREES_OF_FREEDOM} dof)')
+             label=f'Theoretical PDF ({DEGREES_OF_FREEDOM} dof)')
 
     # Plot the empirical histogram of the Chi² values
-    plt.plot(edges[1:], hist, label='data')
+    plt.plot(edges[1:], hist, label='Empirical data')
 
-    # Set logarithmic scales for both axes
+    # Set logarithmic scales
     plt.yscale('log')
     plt.xscale('log')
 
@@ -446,12 +447,17 @@ def chi2_pdf_plot(chi2_concat):
     plt.xlabel('Chi² sum')
     plt.ylabel('Density')
 
-    # Display the legend and grid
+    # Display legend and grid
     plt.legend()
     plt.grid(True)
 
-    # Render the plot
-    plt.show()
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+        print(f"PDF plot saved to: {save_path}")
+        plt.close()
+    else:
+        plt.show()
+
 
 
 # perform_test_weights_v3 function
@@ -506,83 +512,67 @@ def observational_weight(particle_energy, obs_parameters):
         return np.exp(-0.5 * np.square((logged_energy - mid_energy) / sigma)) / (sigma * np.sqrt(2 * np.pi))
 
 # Test and plot functions
-def test_weights_v3(data1, data2, wei1, wei2):
+def test_weights_v3(data1, data2, wei1, wei2, dof=20):
     """
     Computes the Chi² statistic for comparing two weighted histograms of energy distributions.
-    
+
     Parameters:
     - data1, data2 (array-like): Arrays of energy values from two distributions to compare.
     - wei1, wei2 (array-like): Corresponding weights for data1 and data2.
-    
+    - dof (int): Degrees of freedom used to determine the number of histogram bins (default 40).
+
     Returns:
-    - float: The Chi² sum or an alternative metric based on weighted histogram comparison.
-    
-    This function performs a weighted Chi² test by comparing histograms of the two data sets.
-    It uses logarithmically spaced bins and normalizes the weights before computing the statistic.
+    - float: The Chi² sum based on valid weighted histogram comparison, or NaN if no valid bins.
     """
-    
-    # Determine the minimum and maximum values for the histogram bins
+
+    # Determine log-scaled energy bin edges based on min/max across both datasets
     min_val = min(np.min(data1), np.min(data2))
     max_val = max(np.max(data1), np.max(data2))
-    
-    # Define the number of bins (degrees of freedom + 1)
     bins_count = DEGREES_OF_FREEDOM + 1
-
-    # Generate logarithmically spaced bins for the histograms
     ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
 
-    # Normalize weights to ensure sum equals 1
+    # Normalize weights and apply observational correction
     norm1 = np.sum(wei1)
     norm2 = np.sum(wei2)
-    wei1_norm = (wei1 / norm1)*observational_weight(data1, [0.25,1e3])
-    wei2_norm = (wei2 / norm2)*observational_weight(data2, [0.25,1e3])
+    # wei1_norm = (wei1 / norm1)
+    # wei2_norm = (wei2 / norm2)
+    wei1_norm = (wei1 / norm1) * observational_weight(data1, [0.25, 30e3])
+    wei2_norm = (wei2 / norm2) * observational_weight(data2, [0.25, 30e3])
 
-    # Create histograms for unweighted data to identify valid bins
-    N_on, edges = np.histogram(data1, bins=ebins)
+    # Compute raw (unweighted) histograms to assess population per bin
+    N_on, _ = np.histogram(data1, bins=ebins)
     N_off, _ = np.histogram(data2, bins=ebins)
-    
-    # Check if any bin has less than 20 entries (considered statistically insufficient)
-    if (N_on < 20).any() or (N_off < 20).any():
-        print("CONDITION NOT MET")
-    
-    # Create a mask to select only valid bins with enough data
-    mask = np.logical_and(N_on > 20, N_off > 20)
 
-    # Weighted histograms and their squared weights
-    Wi_on, edges = np.histogram(data1, bins=ebins, weights=wei1_norm)
-    S2i_on, _ = np.histogram(data1, bins=ebins, weights=np.power(wei1_norm, 2))
+    # Compute weighted histograms and squared weights
+    Wi_on, _ = np.histogram(data1, bins=ebins, weights=wei1_norm)
+    S2i_on, _ = np.histogram(data1, bins=ebins, weights=np.square(wei1_norm))
     Wi_off, _ = np.histogram(data2, bins=ebins, weights=wei2_norm)
-    S2i_off, _ = np.histogram(data2, bins=ebins, weights=np.power(wei2_norm, 2))
+    S2i_off, _ = np.histogram(data2, bins=ebins, weights=np.square(wei2_norm))
 
-    # Identify bins with valid weights
-    valid_Wi_on = Wi_on > 0
-    valid_Wi_off = Wi_off > 0
+    # Compute variance per bin using weighted uncertainty formula
+    valid = (Wi_on > 0) & (Wi_off > 0)
+    di2 = np.full_like(Wi_on, np.inf, dtype=np.float64)
+    di2[valid] = Wi_off[valid] * (
+        S2i_on[valid] / Wi_on[valid] + S2i_off[valid] / Wi_off[valid]
+    )
 
-    # Initialize the variance array for the weighted histograms
-    di2 = np.zeros_like(Wi_off, dtype=np.float64)
-    
-    # Calculate the variance for valid bins
-    di2[valid_Wi_on & valid_Wi_off] = Wi_off[valid_Wi_on & valid_Wi_off] * (
-        S2i_on[valid_Wi_on & valid_Wi_off] / Wi_on[valid_Wi_on & valid_Wi_off] + 
-        S2i_off[valid_Wi_on & valid_Wi_off] / Wi_off[valid_Wi_on & valid_Wi_off])
-    
-    # Set variance to infinity where weights are not valid
-    di2[~(valid_Wi_on & valid_Wi_off)] = np.inf
+    # Select only bins that meet statistical requirements
+    mask = np.logical_and.reduce([
+        N_on > 20,             # Sufficient counts in distribution 1
+        N_off > 20,            # Sufficient counts in distribution 2
+        di2 > 0,               # Non-zero variance
+        np.isfinite(di2)       # Exclude NaN or Inf
+    ])
 
-    # Calculate the Chi² statistic only for the valid bins
-    chi2sum = np.sum(np.power((Wi_on[mask] - Wi_off[mask]), 2) / di2[mask])
-    
-    # Optionally plot histograms if Chi² sum is below a threshold
-    # if chi2sum <= 40.0:
-    #     print('CHI2SUM', chi2sum)
-    #     fig_name1 ='/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/energy_hist_Wion_chi2-.png'
-    #     fig_name2 ='/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/energy_hist_Wioff_chi2-.png'
-    #     plot_energy_histogram(data1, fig_name1)
-    #     plot_energy_histogram(data2, fig_name2)
-    
-    # Alternative return: Chi² sum or total weight in valid bins
+    if np.sum(mask) == 0:
+        print("Warning: No bins meet the minimum statistical criteria.")
+        return np.nan
+
+    # Compute the Chi² sum over valid bins
+    # chi2sum = np.sum(np.square(Wi_on[mask] - Wi_off[mask]) / di2[mask])
+    chi2sum = np.sum(Wi_on[mask])
+
     return chi2sum
-
 
 def plot_skymap(skymap, title, proj='C', label='', filename=None, 
                 thresh=None, dMin=None, dMax=None, sun=None):
@@ -754,13 +744,13 @@ def rotate_map(old_map):
 # Example usage of the improved functions
 
 # Define the path to the particle data file (.npz format)
-particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/real_mapping_phyind-2p6_all-weights_gaussian-centered-100TeV.npz'
+particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/'
 
 # Load the particle data using the improved load_data function
-particles = load_data(particles_dir)
+particles = load_data(particles_dir+"real_mapping_phyind-2p6_all-weights_nside=32.npz")
 
 # Define the output directory for plots and results
-file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/'
+file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_may2025/'
 
 # Check if particle data was loaded successfully
 if particles is not None:
@@ -774,7 +764,7 @@ if particles is not None:
     
     # Perform the Chi² test using the perform_test_weights_v3 function
     # The test uses an energy range of [0.1, 100] and a strip width of 1 pixels
-    chi2_result = perform_test_weights_v3(particles, [0.1, 100], 1)
+    chi2_result = perform_test_weights_v3(particles, [100, 100000], 1)
     
     # Rotate the Chi² map to equatorial coordinates
     chi2_result = rotate_map(chi2_result)
@@ -785,11 +775,21 @@ if particles is not None:
     #                     ".npz", chi2=chi2_result)
     
     # Plot the Chi² skymap and save the image to the specified directory
-    plot_chi_squared(chi2_result, file_plot_dir, 
-                     'skymap_chi2_real-mapping_pwrind=-2p6_all-weights_gaussian-centered-100TeV')
+    # valid_pixels = ~np.isnan(chi2_result)
+    # print("Valid number of pixels:", np.sum(valid_pixels), "of", chi2_result.size)
+
+    # if np.isnan(chi2_result).any():
+    #     print("Warning: Chi2 result contains NaN values. They will be masked in the map.")
+    #     chi2_result = np.nan_to_num(chi2_result, nan=0.0, posinf=0.0, neginf=0.0)
+
+    # Save chi2 data
+    maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
+    np.savez_compressed(maps_dir + "wion_realmap_pwrind-2p6_all-wei_nside32_pix1_dof20_gaussian-30TeV.npz", chi_squared=chi2_result)
+
+    plot_chi_squared(chi2_result, file_plot_dir, 'wion_skymap_real-mapping_pwrind=-2p6_all-wei_nside32_pix1_dof20_gaussian-30TeV')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2_result)
+    chi2_pdf_plot(chi2_result, file_plot_dir + 'pdfs/wion_pdf_real-mapping_pwrind=-2p6_all-wei_nside32_pix1_dof20_gaussian-30TeV.png')
 
 else:
     print("Data loading failed.")
