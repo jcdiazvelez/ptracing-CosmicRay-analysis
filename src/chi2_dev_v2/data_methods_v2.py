@@ -1,0 +1,562 @@
+import glob
+import sys
+import numpy as np
+import healpy as hp
+from multiprocessing import Pool
+from PathSegment import PathSegment
+import matplotlib.pyplot as plt
+from matplotlib import pylab
+
+
+# Create particle data from raw traces
+def create_particles(nside, particle_dir, particle_file, raw_dir):
+    # Set target radius
+    radius = 50000
+
+    # Prepare filenames
+    filename = "*.npz"
+    path = raw_dir + "/" + filename
+
+    # Prepare file names for processing
+    files = sorted(glob.glob(path))
+    n_files = len(files)
+
+    # Use 16 worker processes
+    pool = Pool(processes=16)
+
+    # Create pool input for direction data map
+    pool_input = []
+    for i in range(n_files):
+        pool_input.append((files[i], nside, radius))
+
+    # Generate and flatten direction data
+    direction_data = pool.starmap(process_particle_data, pool_input)
+    direction_data = np.array([ent for sublist in
+                               direction_data for ent in sublist])
+
+    # Save produced data
+    output_name = particle_dir + particle_file
+    print("saving %s" % output_name)
+    np.savez_compressed(output_name, particles=direction_data)
+
+
+# Process data files and populate initial and final sky maps
+def process_particle_data(filename, nside, radius):
+    file = np.load(filename)
+
+    data_array = []
+
+    for key in file:
+        try:
+            # Get particle track
+            particle = file[key]
+
+            if len(particle) < 3 or PathSegment(particle[-1]).status == -1:
+                raise Exception("Invalid trace")
+
+            # Get state of particle initially
+            p_first = PathSegment(particle[0])
+            p_last = None
+
+            # Determine final state of particle
+            for i in range(len(particle) - 1, 1, -1):
+                p_i = PathSegment(particle[i])
+                p_j = PathSegment(particle[i - 1])
+                if p_i.r > radius > p_j.r:
+                    p_last = p_i
+                    break
+
+            if p_last is None:
+                raise Exception("Invalid trace")
+
+            # Return the particle's momentum and initial and final pixels
+            initial_pixel = hp.vec2pix(nside, p_first.px, p_first.py,
+                                       p_first.pz)
+            final_pixel = hp.vec2pix(nside, p_last.px, p_last.py, p_last.pz)
+            #b = (p_last.Bx, p_last.By, p_last.Bz)
+            data_array.append((initial_pixel, final_pixel, p_last.p, p_last.Bx,p_last.By, p_last.Bz))
+
+        except Exception:
+            continue
+
+    return data_array
+
+
+def process_particle_data_equatorial_coord(filename, nside, radius):
+    file = np.load(filename)
+    data_array = []
+
+    # Rotation matrix: NICKS coordinates → ecliptic system
+    NickEcl = np.array([
+        [-0.20237267,  0.97163923,  0.12232136],
+        [-0.97929205, -0.20005855, -0.03104294],
+        [-0.00569111, -0.12607058,  0.99200495]
+    ])
+
+    # Healpy rotator: ecliptic → celestial (equatorial)
+    rot = hp.Rotator(coord=['E', 'C'])
+
+    for key in file:
+        try:
+            particle = file[key]
+            if len(particle) < 3:
+                #print(f"Key {key}: too few steps ({len(particle)})")
+                raise Exception("Invalid trace (too short)")
+
+            last_status = PathSegment(particle[-1]).status
+            if last_status == -1:
+                print(f"Key {key}: last segment has invalid status (-1)")
+                raise Exception("Invalid trace (status)")
+
+            # Reject if too few points or invalid status
+            if len(particle) < 3 or PathSegment(particle[-1]).status == -1:
+                raise Exception("Invalid trace")
+
+            # First point of the trajectory (near origin)
+            p_first = PathSegment(particle[0])
+            p_last = None
+
+            # Find the last point that crosses the radius threshold
+            for i in range(len(particle) - 1, 1, -1):
+                p_i = PathSegment(particle[i])
+                p_j = PathSegment(particle[i - 1])
+                if p_i.r > radius > p_j.r:
+                    p_last = p_i
+                    break
+
+            if p_last is None:
+                raise Exception("No valid exit point at radius")
+
+            # Extract momentum vectors at initial and final states
+            v_first = np.array([p_first.px, p_first.py, p_first.pz])
+            v_last = np.array([p_last.px, p_last.py, p_last.pz])
+
+            # Rotate vectors to ecliptic coordinates
+            v_first_ecl = NickEcl @ v_first
+            v_last_ecl = NickEcl @ v_last
+
+            # Rotate to equatorial (celestial) coordinates
+            v_first_eq = rot(v_first_ecl)
+            v_last_eq = rot(v_last_ecl)
+
+            # Normalize vectors (required for healpy pixel conversion)
+            v_first_eq /= np.linalg.norm(v_first_eq)
+            v_last_eq  /= np.linalg.norm(v_last_eq)
+
+            # Convert direction vectors to HEALPix pixel numbers
+            initial_pixel = hp.vec2pix(nside, *v_first_eq)
+            final_pixel = hp.vec2pix(nside, *v_last_eq)
+
+            # Extract magnetic field vector at final state
+            b_local = np.array([p_last.Bx, p_last.By, p_last.Bz])
+
+            # Rotate magnetic field vector to ecliptic coordinates
+            b_ecl = NickEcl @ b_local
+
+            # Rotate magnetic field vector to equatorial (celestial) coordinates
+            b_eq = rot(b_ecl)
+
+            Bx_eq, By_eq, Bz_eq = b_eq
+
+            # Save output: initial pixel, final pixel, final momentum magnitude, and magnetic field components
+            data_array.append((
+                initial_pixel,
+                final_pixel,
+                p_last.p,
+                Bx_eq, By_eq, Bz_eq
+            ))
+
+        except Exception as e:
+            #print(f"Error processing key {key}: {e}")
+            continue
+
+    return data_array
+
+
+# Create maps
+def create_maps(nside, bins, obs_parameters, imposed_parameters,
+                physical_index, particle_dir, particle_file,
+                type="standard"):
+
+    # Find particle data and load it
+    particles_data = np.load(particle_dir + particle_file, allow_pickle=True)
+    particles = particles_data["particles"]
+
+    npix = hp.nside2npix(nside)
+
+    # Create energy binning scheme
+    p_max, p_min = 0, sys.maxsize
+
+    # Determine max and min energy
+    for item in particles:
+        if item[2] < p_min:
+            p_min = item[2]
+        elif item[2] > p_max:
+            p_max = item[2]
+
+    # Create bins
+    
+    bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001),
+                            bins + 1)
+
+    # Create a sky map for each bin, for weighing by energy
+    final_maps = np.zeros((bins, npix))
+    reweighed_initial = np.zeros((bins, npix))
+    reweighed_final = np.zeros((bins, npix))
+
+    # Populate initial and final maps
+    for item in particles:
+        final_pixel = int(item[1])
+        p = item[2]
+        p_bin = -1
+        for i in range(bins):
+            if p >= bin_sizes[i]:
+                p_bin += 1
+            else:
+                break
+        particle_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
+                                          physical_index, -1)
+        particle_weight *= observational_weight(p, obs_parameters)
+        final_maps[p_bin][final_pixel] += particle_weight
+
+    # Go back through the data and reweigh the initial map
+    for item in particles:
+        initial_pixel = int(item[0])
+        final_pixel = int(item[1])
+        p = item[2]
+        bx = item[3]
+        by = item[4]
+        bz = item [5]
+
+        p_bin = -1
+        for i in range(bins):
+            if p >= bin_sizes[i]:
+                p_bin += 1
+            else:
+                break
+
+        uniform = imposed_parameters[0]
+        dipole = imposed_parameters[1]
+
+        imposed_weight = uniform + dipole * cos_dipole_f(nside, final_pixel, bx, by, bz)
+        direction_weight = final_maps[p_bin][final_pixel]
+        momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
+                                          physical_index, -1)
+        obs_weight = observational_weight(p, obs_parameters)
+
+        total_weight = momentum_weight * imposed_weight * obs_weight \
+            / direction_weight
+
+        if type == "unweighted":
+            total_weight = 1
+
+        reweighed_initial[p_bin][initial_pixel] += total_weight
+        reweighed_final[p_bin][final_pixel] += total_weight
+
+    return np.array([reweighed_initial, reweighed_final])
+
+
+def create_weights_v2(nside, bins, obs_parameters, imposed_parameters,
+                      physical_index, particle_dir, particle_file):
+    particles_data = np.load(particle_dir + particle_file, allow_pickle=True)
+    particles = particles_data['particles']
+    npix = hp.nside2npix(nside)
+
+    # Extracting energies from particles
+    energies = particles[:, 2]
+    p_min, p_max = np.min(energies), np.max(energies)
+
+    # Create bins
+    bin_sizes = np.logspace(1.5, 5.5, bins + 1)
+
+    # Initialize maps and counts
+    final_maps = np.zeros((bins, npix))
+    energy_bin_counts = np.zeros((npix, bins))
+    pixel_counts = np.zeros(npix)
+
+    for item in particles:
+        final_pixel = int(item[1])
+        p = item[2]
+        p_bin = np.digitize(p, bin_sizes) - 1  # digitize returns indices starting from 1
+        pixel_counts[final_pixel] += 1.0
+        if 0 <= p_bin < bins:
+            energy_bin_counts[final_pixel, p_bin] += 1.0
+
+    for ipix in range(npix):
+        pixnorm = 1.0 / pixel_counts[ipix]
+        #eweight = np.zeros(bins)
+        #non_zero_counts = energy_bin_counts[ipix] > 0
+        #eweight[non_zero_counts] = 1.0 / energy_bin_counts[ipix][non_zero_counts]
+        eweight = 1.0 / energy_bin_counts[ipix]
+        eweight[np.isinf(eweight)] = 0.0  # Replace infinite values with 0.0
+        eweight_norm = np.sum(eweight)
+        if eweight_norm > 0:
+            eweight /= eweight_norm
+        print("pixnorm/eweight_norm/eweight", pixnorm, eweight_norm, eweight)        
+        for ebin in range(bins):
+            final_maps[ebin, ipix] = pixnorm * eweight[ebin]
+            #print("final_maps[ebin, ipix]", final_maps[ebin, ipix])
+        x_values = np.arange(1, 21)
+        print("final_maps[:,ipix]",final_maps[:,ipix])
+        plt.plot(x_values, final_maps[:,ipix], marker='o', linestyle='-')
+        plt.title('Histogram of boundary maps for all the pixels')
+        plt.xlabel("Energy bins")
+        plt.ylabel("pixnorm * eweight")
+        fig = pylab.figure(1)
+        fig.savefig(f"/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/test_wei_fix_chi2_5/pixel_"+str(ipix)+".png", dpi=250)
+        plt.close()
+
+            # Plot the histograms for all the pixels
+            # pix, edges = np.histogram(final_maps, bins=bin_sizes)
+            # plt.bar(edges[:-1], pix, width=np.diff(edges), edgecolor='black', align='edge')
+            # plt.title('Histogram of boundary maps for all the pixels')
+            # plt.xlabel("Energy bins")
+            # plt.ylabel("Wi")
+            # fig = pylab.figure(1)
+            # fig.savefig(f".png", dpi=250)
+            # plt.close()
+
+    reweighed_particles = [[] for _ in range(npix)]
+
+    for item in particles:
+        initial_pixel = int(item[0])
+        final_pixel = int(item[1])
+        p = item[2]
+        bx, by, bz = item[3], item[4], item[5]
+        p_bin = np.digitize(p, bin_sizes) - 1
+        uniform, dipole = imposed_parameters
+        imposed_weight = uniform + dipole * cos_dipole_f(nside, final_pixel, bx, by, bz)
+        direction_weight = final_maps[p_bin, final_pixel] if 0 <= p_bin < bins else 0
+        momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1], physical_index, -1)
+        obs_weight = observational_weight(p, obs_parameters)
+        total_weight = momentum_weight * imposed_weight * obs_weight * direction_weight
+        reweighed_particles[initial_pixel].append([p, total_weight])
+
+    max_length = max(len(sublist) for sublist in reweighed_particles)
+    reweighed_particles_equalized = [sublist + [[p_min, 0.0]] * (max_length - len(sublist)) for sublist in reweighed_particles]
+    return reweighed_particles_equalized
+
+
+
+# Create particle weighting file for KS tests
+def create_weights(nside, bins, obs_parameters, imposed_parameters,
+                   physical_index, particle_dir, particle_file):
+
+    # Find corresponding particle data and load it
+    particles_data = np.load(particle_dir + particle_file, allow_pickle=True)
+    particles = particles_data['particles']
+
+    npix = hp.nside2npix(nside)
+
+    # Create energy binning scheme
+    p_max, p_min = 0, sys.maxsize
+
+    # Determine max and min energy
+    for item in particles:
+        if item[2] < p_min:
+            p_min = item[2]
+        elif item[2] > p_max:
+            p_max = item[2]
+    # Create bins
+    bin_sizes = np.logspace(np.log10(p_min * 0.99), np.log10(p_max * 1.001),
+                            bins + 1)
+    # Create a sky map for each bin, for weighing by energy
+    final_maps = np.zeros((bins, npix))
+    reweighed_particles = [[] for i in range(npix)]
+
+    # Populate initial and final maps
+    for item in particles:
+        final_pixel = int(item[1])
+        p = item[2]
+        p_bin = -1
+        for i in range(bins):
+            if p >= bin_sizes[i]:
+                p_bin += 1
+            else:
+                break
+        particle_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
+                                          physical_index, -1)
+        #particle_weight *= observational_weight(p, obs_parameters)
+        final_maps[p_bin][final_pixel] += particle_weight
+
+    # Go back through the data and reweigh the initial map. Save the individual
+    # particle data for statistical testing
+    for item in particles:
+        initial_pixel = int(item[0])
+        final_pixel = int(item[1])
+        p = item[2]
+        bx = item[3]
+        by = item[4]
+        bz = item [5]
+        p_bin = -1
+        for i in range(bins):
+            if p >= bin_sizes[i]:
+                p_bin += 1
+            else:
+                break
+
+        uniform = imposed_parameters[0]
+        dipole = imposed_parameters[1]
+
+        imposed_weight = uniform + dipole * cos_dipole_f(nside, final_pixel, bx, by, bz)
+        direction_weight = final_maps[p_bin][final_pixel]
+        momentum_weight = weight_powerlaw(p, bin_sizes[0], bin_sizes[-1],
+                                          physical_index, -1)
+        obs_weight = observational_weight(p, obs_parameters)
+        total_weight = momentum_weight * imposed_weight * obs_weight / direction_weight
+        # print('uniform/dipole/imposed/cos_dipole_f/direction/momentum/obs/total', \
+        #       uniform, dipole, imposed_weight, cos_dipole_f(nside, final_pixel, bx, by, bz), \
+        #       direction_weight, momentum_weight, obs_weight, total_weight)
+
+        reweighed_particles[initial_pixel].append([p, momentum_weight*imposed_weight*obs_weight])
+    max_length = max(len(sublist) for sublist in reweighed_particles)
+    reweighed_particles_equalized = [sublist + [[p_min, 0]] * (max_length - len(sublist)) for sublist in reweighed_particles]
+    return reweighed_particles_equalized
+
+
+# For applying a dipole to the final distribution of momenta
+def cos_dipole_f(nside, pix, bx, by, bz):
+    pxf, pyf, pzf = hp.pix2vec(nside, pix)
+    return -(pxf * bx + pyf * by + pzf * bz) / \
+        (np.sqrt(pxf * pxf + pyf * pyf + pzf * pzf) + 1.e-16) / \
+        np.sqrt(bx * bx + by * by + bz * bz)
+
+
+# Probability density function for power law functions
+def powerlaw_pdf(x, x_min, x_max, power):
+    x_min_g, x_max_g = x_min ** (power + 1.), x_max ** (power + 1.)
+    if power == -1.0:
+        return x ** power / np.log(x_max / x_min)
+    else:
+        return (power + 1.) / (x_max_g - x_min_g) * x ** power
+
+
+# Weighting scheme for energy bins
+def weight_powerlaw(x, x_min, x_max, g, power):
+    return x ** g / powerlaw_pdf(x, x_min, x_max, power)
+
+
+# For rotating sky maps to equatorial coordinates
+def rotate_map(old_map):
+    coord_matrix = np.matrix([
+        [-0.202372670869508942, 0.971639226673224665, 0.122321361599999998],
+        [-0.979292047083733075, -0.200058547149551208, -0.0310429431300000003],
+        [-0.00569110735590557925, -0.126070579934110472, 0.992004949699999972]
+    ])
+
+    map_matrix = np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
+    npix = len(old_map)
+    nside = hp.npix2nside(npix)
+    new_map = np.zeros(npix)
+    r = hp.Rotator(coord=['C', 'E'])
+
+    # For each pixel in the new map, add the transformed pixel from the old map
+    for i in range(npix):
+        theta, phi = hp.pix2ang(nside, i)
+
+        # Apply transform from simulation to ecliptic coordinates
+        old_theta, old_phi = hp.rotator.rotateDirection(
+            np.linalg.inv(map_matrix), theta, phi)
+
+        # Appy transform from ecliptic to equatorial coordinates
+        old_theta, old_phi = r(old_theta, old_phi)
+
+        # Apply transform to put GMT on rhs of maps
+        old_theta, old_phi = hp.rotator.rotateDirection(
+            np.linalg.inv(coord_matrix), old_theta, old_phi)
+
+        # Add appropriate pixel to new map
+        old_pix = hp.ang2pix(nside, old_theta, old_phi)
+        new_map[i] += old_map[old_pix]
+
+    return new_map
+
+
+# Rotate simulation coordinates
+def rotate_map_sim(old_map):
+    map_matrix = np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
+    npix = len(old_map)
+    nside = hp.npix2nside(npix)
+    new_map = np.zeros(npix)
+
+    # For each pixel in the new map, add the transformed pixel from the old map
+    for i in range(npix):
+        theta, phi = hp.pix2ang(nside, i)
+
+        # Apply transform from simulation to ecliptic coordinates
+        old_theta, old_phi = hp.rotator.rotateDirection(
+            np.linalg.inv(map_matrix), theta, phi)
+
+        # Add appropriate pixel to new map
+        old_pix = hp.ang2pix(nside, old_theta, old_phi)
+        new_map[i] += old_map[old_pix]
+
+    return new_map
+
+
+# Create a log spaced energy binning scheme
+def create_bin_sizes(particles, num_bins):
+    max_energy = 0
+    min_energy = sys.float_info.max
+    for pixel in particles:
+        for particle in pixel:
+            if particle[0] > max_energy:
+                max_energy = particle[0]
+            if particle[0] < min_energy:
+                min_energy = particle[0]
+    max_log = np.log10(1.001 * max_energy)
+    min_log = np.log10(0.99 * min_energy)
+    cutoffs = np.logspace(min_log, max_log, num=num_bins + 1, base=10)
+    return cutoffs
+
+
+# Sort particles into energy bins. Returns a 3D array with pixels on axis 0,
+# bins on axis 1 and particles on axis 2
+def bin_particles(pixels, binning):
+    num_bins = len(binning) - 1
+    pixels_binned = []
+    for particles_list in pixels:
+        particles_binned = [[] for i in range(num_bins)]
+        for particle in particles_list:
+            for i in range(num_bins):
+                if binning[i] < particle[0] < binning[i + 1]:
+                    particles_binned[i].append(particle)
+                    break
+        pixels_binned.append(particles_binned)
+    return pixels_binned
+
+
+# Create sky map of reweighed momenta
+def create_reweighed_sky_maps(binned_particles):
+    num_pixels = len(binned_particles)
+    num_bins = len(binned_particles[0])
+
+    flux_maps = np.zeros((num_bins, num_pixels))
+
+    for i in range(num_bins):
+        for j in range(num_pixels):
+            for particle in binned_particles[j][i]:
+                flux_maps[i][j] += particle[1]
+    return flux_maps
+
+
+# Gaussian in log space for approximating experimental sensitivity
+def observational_weight(particle_energy, obs_parameters):
+    # If observational weighting is not being used, return uniform
+    if obs_parameters[0] == -1 and obs_parameters[1] == -1:
+        return 1
+    else:
+        # Physical constants for scaling energy
+        c = 299792458
+        e = 1.60217663 * 10 ** (-19)
+        m_p = 1.67262192 * 10 ** (-27)
+        energy_factor = 1 / (m_p * c * c / (e * 10 ** 12))
+
+        # Parameters for changing the shape of the distribution
+        sigma = obs_parameters[0]
+        mid_energy = np.log10(obs_parameters[1] * energy_factor)
+
+        logged_energy = np.log10(particle_energy)
+
+        return np.exp(-0.5 * np.square((logged_energy - mid_energy) / sigma)) \
+            / (sigma * np.sqrt(2 * np.pi))
