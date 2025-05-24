@@ -156,14 +156,14 @@ def process_particle_data_equatorial_coord(filename, nside, radius):
             # Rotate magnetic field vector to equatorial (celestial) coordinates
             b_eq = rot(b_ecl)
 
-            Bx_eq, By_eq, Bz_eq = b_eq
+            # Bx_eq, By_eq, Bz_eq = b_eq
 
             # Save output: initial pixel, final pixel, final momentum magnitude, and magnetic field components
             data_array.append((
                 initial_pixel,
                 final_pixel,
                 p_last.p,
-                Bx_eq, By_eq, Bz_eq
+                *b_eq
             ))
 
         except Exception as e:

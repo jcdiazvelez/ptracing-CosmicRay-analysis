@@ -28,7 +28,7 @@ import scipy.stats
 from tqdm import tqdm
 import gc
 
-DEGREES_OF_FREEDOM = 20
+DEGREES_OF_FREEDOM = 10
 
 # Improved data loading function
 def load_data(file_path):
@@ -234,7 +234,7 @@ def generic_shuffle_test(particles, limits, width, ndist):
         data2 = ext_boundary_dist[random_index][0]
         wei2 = ext_boundary_dist[random_index][1]
 
-        chi2 = test_weights_v3(data1, data2, wei1, wei2)
+        chi2 = test_weights_v3(data1, data2, wei1, wei2, 10)
         chi2_concat.append(chi2)
 
     del ext_boundary_dist  # Free memory immediately after use
@@ -406,7 +406,7 @@ def impose_energy_range(distribution, min_energy, max_energy):
     return np.array([energies[indices], weights[indices]])
 
 # Chi² PDF plot function
-def chi2_pdf_plot(chi2_concat, save_path=None):
+def chi2_pdf_plot(chi2_concat, save_path=None, dof=10):
     """
     Plots a Probability Density Function (PDF) of Chi² values and compares it 
     to the theoretical Chi² distribution.
@@ -426,26 +426,26 @@ def chi2_pdf_plot(chi2_concat, save_path=None):
     hist, edges = np.histogram(chi2_concat, bins=xbins, density=True)
 
     # Create a theoretical Chi² distribution
-    rv = scipy.stats.chi2(DEGREES_OF_FREEDOM)
+    rv = scipy.stats.chi2(dof)
 
     # Initialize the plot
     plt.figure(figsize=(10, 6))
 
     # Plot the theoretical Chi² PDF
     plt.plot(xbins, rv.pdf(xbins), 'k-', lw=2, 
-             label=f'Theoretical PDF ({DEGREES_OF_FREEDOM} dof)')
+             label=f'Función de densidad de probabilidad ({dof} grados de libertad)')
 
     # Plot the empirical histogram of the Chi² values
-    plt.plot(edges[1:], hist, label='Empirical data')
+    plt.plot(edges[1:], hist, label='Datos calculados de χ²')
 
     # Set logarithmic scales
     plt.yscale('log')
     plt.xscale('log')
 
     # Add plot titles and labels
-    plt.title('Chi² Probability Density Function (PDF)')
-    plt.xlabel('Chi² sum')
-    plt.ylabel('Density')
+    # plt.title('Chi² Probability Density Function (PDF)')
+    plt.xlabel('χ²')
+    plt.ylabel('Función de densidad de probabilidad')
 
     # Display legend and grid
     plt.legend()
@@ -461,7 +461,7 @@ def chi2_pdf_plot(chi2_concat, save_path=None):
 
 
 # perform_test_weights_v3 function
-def perform_test_weights_v3(particles, limits, width):
+def perform_test_weights_v3(particles, limits, width, dof=10):
     """
     Computes Chi² for all pixels in the skymap using strip and ring distributions.
     
@@ -490,7 +490,7 @@ def perform_test_weights_v3(particles, limits, width):
         pixel_distribution, _ = get_ring_distribution(i, particles, nside, width)
         pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
         chi2 = test_weights_v3(pixel_distribution[0], strip_distribution[0],
-                               pixel_distribution[1], strip_distribution[1])
+                               pixel_distribution[1], strip_distribution[1], dof)
         chi2sum.append(chi2)
     return chi2sum
 
@@ -512,7 +512,7 @@ def observational_weight(particle_energy, obs_parameters):
         return np.exp(-0.5 * np.square((logged_energy - mid_energy) / sigma)) / (sigma * np.sqrt(2 * np.pi))
 
 # Test and plot functions
-def test_weights_v3(data1, data2, wei1, wei2, dof=20):
+def test_weights_v3(data1, data2, wei1, wei2, dof=10):
     """
     Computes the Chi² statistic for comparing two weighted histograms of energy distributions.
 
@@ -528,7 +528,7 @@ def test_weights_v3(data1, data2, wei1, wei2, dof=20):
     # Determine log-scaled energy bin edges based on min/max across both datasets
     min_val = min(np.min(data1), np.min(data2))
     max_val = max(np.max(data1), np.max(data2))
-    bins_count = DEGREES_OF_FREEDOM + 1
+    bins_count = dof + 1
     ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
 
     # Normalize weights and apply observational correction
@@ -569,8 +569,8 @@ def test_weights_v3(data1, data2, wei1, wei2, dof=20):
         return np.nan
 
     # Compute the Chi² sum over valid bins
-    # chi2sum = np.sum(np.square(Wi_on[mask] - Wi_off[mask]) / di2[mask])
-    chi2sum = np.sum(Wi_on[mask])
+    chi2sum = np.sum(np.square(Wi_on[mask] - Wi_off[mask]) / di2[mask])
+    # chi2sum = np.sum(Wi_on[mask])
 
     return chi2sum
 
@@ -665,9 +665,9 @@ def plot_chi_squared(chi_squared_map, out_dir, name):
     
     # Generate the skymap visualization
     plot_skymap(z_values,
-                title=name,
-                label="Range",
-                proj='C0',
+                title=None,
+                label="Rango de χ²",
+                proj='C',
                 dMin=chi2sum[np.argmin(chi2sum)],
                 dMax=chi2sum[np.argmax(chi2sum)],
                 filename=out_dir + name)
@@ -764,7 +764,7 @@ if particles is not None:
     
     # Perform the Chi² test using the perform_test_weights_v3 function
     # The test uses an energy range of [0.1, 100] and a strip width of 1 pixels
-    chi2_result = perform_test_weights_v3(particles, [100, 100000], 1)
+    chi2_result = perform_test_weights_v3(particles, [100, 100000], 1, 10)
     
     # Rotate the Chi² map to equatorial coordinates
     #chi2_result = rotate_map(chi2_result)
@@ -784,12 +784,12 @@ if particles is not None:
 
     # Save chi2 data
     maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-    np.savez_compressed(maps_dir + "wion_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside32_pix1_dof20_gaussian-3TeV.npz", chi_squared=chi2_result)
+    np.savez_compressed(maps_dir + "chi2_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV.npz", chi_squared=chi2_result)
 
-    plot_chi_squared(chi2_result, file_plot_dir, 'wion_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside32_pix1_dof20_gaussian-3TeV')
+    plot_chi_squared(chi2_result, file_plot_dir, 'chi2_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2_result, file_plot_dir + 'pdfs/wion_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside32_pix1_dof20_gaussian-3TeV.png')
+    chi2_pdf_plot(chi2_result, file_plot_dir + 'pdfs/chi2_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV.png',10)
 
 else:
     print("Data loading failed.")
