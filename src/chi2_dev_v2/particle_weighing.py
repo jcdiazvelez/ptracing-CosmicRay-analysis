@@ -141,9 +141,9 @@ def save_results(reweighed_particles_array, output_file):
     print(f"Results saved to {output_file}")
 
 particle_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/"
-particle_file = "eq_coord_norm_nside=32.npz"
-output_file = particle_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=32.npz"
+particle_file = "eq_coord_norm_nside=16.npz"
+output_file = particle_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16.npz"
 
 # Execute function and save results
-result = compute_particle_weights(32, 120, [1.0, 0.001], -2.6, particle_dir, particle_file, output_file)
+result = compute_particle_weights(16, 120, [1.0, 0.001], -2.6, particle_dir, particle_file, output_file)
 save_results(result, output_file)

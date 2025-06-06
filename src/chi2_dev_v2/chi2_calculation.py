@@ -532,12 +532,14 @@ def test_weights_v3(data1, data2, wei1, wei2, dof=10):
     ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
 
     # Normalize weights and apply observational correction
+    wei1 = wei1 * observational_weight(data1, [0.25, 3e3])
+    wei2 = wei2 * observational_weight(data2, [0.25, 3e3])
     norm1 = np.sum(wei1)
     norm2 = np.sum(wei2)
-    # wei1_norm = (wei1 / norm1)
-    # wei2_norm = (wei2 / norm2)
-    wei1_norm = (wei1 / norm1) * observational_weight(data1, [0.25, 3e3])
-    wei2_norm = (wei2 / norm2) * observational_weight(data2, [0.25, 3e3])
+    wei1_norm = (wei1 / norm1)
+    wei2_norm = (wei2 / norm2)
+    # wei1_norm = (wei1 / norm1) * observational_weight(data1, [0.25, 3e3])
+    # wei2_norm = (wei2 / norm2) * observational_weight(data2, [0.25, 3e3])
 
     # Compute raw (unweighted) histograms to assess population per bin
     N_on, _ = np.histogram(data1, bins=ebins)
@@ -747,10 +749,10 @@ def rotate_map(old_map):
 particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/'
 
 # Load the particle data using the improved load_data function
-particles = load_data(particles_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=32.npz")
+particles = load_data(particles_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16.npz")
 
 # Define the output directory for plots and results
-file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_may2025/'
+file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/Avance_VII/'
 
 # Check if particle data was loaded successfully
 if particles is not None:
@@ -784,12 +786,12 @@ if particles is not None:
 
     # Save chi2 data
     maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-    np.savez_compressed(maps_dir + "chi2_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV.npz", chi_squared=chi2_result)
+    np.savez_compressed(maps_dir + "chi2_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside16_pix1_dof10_gaussian_diff-ord-3TeV.npz", chi_squared=chi2_result)
 
-    plot_chi_squared(chi2_result, file_plot_dir, 'chi2_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV')
+    plot_chi_squared(chi2_result, file_plot_dir, 'chi2_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_pix1_dof10_gaussian_diff-ord-3TeV')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2_result, file_plot_dir + 'pdfs/chi2_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV.png',10)
+    chi2_pdf_plot(chi2_result, file_plot_dir + 'chi2_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_pix1_dof10_gaussian_diff-ord-3TeV.png',10)
 
 else:
     print("Data loading failed.")

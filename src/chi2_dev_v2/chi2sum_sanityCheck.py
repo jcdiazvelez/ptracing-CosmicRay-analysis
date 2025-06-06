@@ -52,8 +52,8 @@ def plot_chi2_vs_pixel(chi2sum, title='Chi² vs Pixel index', save_path=None):
 
 # Load the chi2sum array from file
 file_maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-figs_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_may2025/Chi2sanityCheck_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV'
-chi2sum = load_chi2_from_npz(file_maps_dir+"chi2_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV.npz")
+figs_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/Avance_VII/Chi2sanityCheck_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside16_pix1_dof10_gaussian_diff-ord-3TeV'
+chi2sum = load_chi2_from_npz(file_maps_dir+"chi2_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside16_pix1_dof10_gaussian_diff-ord-3TeV.npz")
 # chi2sum = load_chi2_from_npz("/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/chi2_realmap_pwrind-2p6_all-wei_nside32_pix1_dof10_gaussian-1TeV.npz")
 
 # Plot the values
