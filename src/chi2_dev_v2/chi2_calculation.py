@@ -1,4 +1,3 @@
-
 '''
 This script processes cosmic ray particle data to compute and analyze the Chi² distribution 
 using skymaps with HEALPix, performing statistical tests and generating visualizations.
@@ -378,6 +377,44 @@ def get_ring_distribution(pixel_number, pixel_list, nside, num_pixels):
     return get_sky_distribution(pixel_list[particle_ring]), len(particle_ring)
 
 
+def get_off_pixels_distribution(pixel_number, pixel_list, nside, num_pixels):
+    """
+    Computes the distribution of energies and weights in the OFF region,
+    defined as the entire skymap excluding a disc around the ON pixel.
+
+    Parameters:
+    - pixel_number (int): Index of the central ON pixel in the skymap.
+    - pixel_list (list of lists): Skymap data where each element is a pixel containing 
+      a list of [energy, weight] pairs.
+    - nside (int): The HEALPix Nside parameter.
+    - num_pixels (int): The radius of the ON region in pixel units.
+
+    Returns:
+    - ndarray: A 2D array where the first row contains energies and the second row contains weights.
+    - int: The number of pixels included in the OFF region.
+    """
+    
+    # Get the 3D vector pointing to the center of the ON pixel
+    vec = hp.pix2vec(nside, pixel_number)
+    
+    # Angular size of the ON region (as a disc)
+    d_theta = np.sqrt(hp.nside2pixarea(nside))  # radians per pixel
+    disc_radius = num_pixels * d_theta
+    
+    # Find pixels inside the ON region disc
+    on_pixels = hp.query_disc(nside, vec, disc_radius)
+    
+    # All pixels in the skymap
+    all_pixels = np.arange(len(pixel_list))
+    
+    # Exclude the ON region pixels
+    off_pixels = np.setdiff1d(all_pixels, on_pixels)
+    
+    # Get the energy and weight distribution of the OFF region
+    return get_sky_distribution(pixel_list[off_pixels]), len(off_pixels)
+
+
+
 def impose_energy_range(distribution, min_energy, max_energy):
     """
     Filters a distribution of energies and weights to impose a specific energy range.
@@ -491,6 +528,39 @@ def perform_test_weights_v3(particles, limits, width, dof=10):
         pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
         chi2 = test_weights_v3(pixel_distribution[0], strip_distribution[0],
                                pixel_distribution[1], strip_distribution[1], dof)
+        chi2sum.append(chi2)
+    return chi2sum
+
+# Performs chi2 calculation using the whole skymap minus the ON part for the OFF region
+def perform_chi2(particles, limits, width, dof=10):
+    """
+    Computes Chi² for all pixels in the skymap using strip and ring distributions.
+    
+    Parameters:
+    - particles: 3D array of particles in each skymap pixel.
+    - limits: energy limits [min, max].
+    - width: width for defining strip and ring areas.
+    
+    Returns:
+    - List of calculated Chi² values for each pixel.
+    """
+    c = 299792458
+    e = 1.60217663 * 10 ** (-19)
+    m_p = 1.67262192 * 10 ** (-27)
+    npix = len(particles)
+    nside = hp.npix2nside(npix)
+
+    lower = limits[0] #/ (m_p * c * c / (e * 10 ** 12))
+    upper = limits[1] #/ (m_p * c * c / (e * 10 ** 12))
+
+    chi2sum = []
+    for i in tqdm(range(npix)):
+        off_pixels_distribution, _ = get_off_pixels_distribution(i, particles, nside, width)
+        off_pixels_distribution = impose_energy_range(off_pixels_distribution, lower, upper)
+        pixel_distribution, _ = get_ring_distribution(i, particles, nside, width)
+        pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
+        chi2 = test_weights_v3(pixel_distribution[0], off_pixels_distribution[0],
+                               pixel_distribution[1], off_pixels_distribution[1], dof)
         chi2sum.append(chi2)
     return chi2sum
 
@@ -766,7 +836,7 @@ if particles is not None:
     
     # Perform the Chi² test using the perform_test_weights_v3 function
     # The test uses an energy range of [0.1, 100] and a strip width of 1 pixels
-    chi2_result = perform_test_weights_v3(particles, [100, 100000], 1, 10)
+    chi2_result = perform_chi2(particles, [100, 100000], 4, 10)
     
     # Rotate the Chi² map to equatorial coordinates
     #chi2_result = rotate_map(chi2_result)
@@ -786,12 +856,12 @@ if particles is not None:
 
     # Save chi2 data
     maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-    np.savez_compressed(maps_dir + "chi2_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside16_pix1_dof10_gaussian_diff-ord-3TeV.npz", chi_squared=chi2_result)
+    np.savez_compressed(maps_dir + "chi2fullmap_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside16_pix4_dof10_gaussian_diff-ord-3TeV.npz", chi_squared=chi2_result)
 
-    plot_chi_squared(chi2_result, file_plot_dir, 'chi2_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_pix1_dof10_gaussian_diff-ord-3TeV')
+    plot_chi_squared(chi2_result, file_plot_dir, 'chi2fullmap_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_pix4_dof10_gaussian_diff-ord-3TeV')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2_result, file_plot_dir + 'chi2_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_pix1_dof10_gaussian_diff-ord-3TeV.png',10)
+    chi2_pdf_plot(chi2_result, file_plot_dir + 'chi2fullmap_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_pix4_dof10_gaussian_diff-ord-3TeV.png',10)
 
 else:
     print("Data loading failed.")
