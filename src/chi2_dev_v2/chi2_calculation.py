@@ -26,6 +26,7 @@ import random
 import scipy.stats 
 from tqdm import tqdm
 import gc
+import math
 
 DEGREES_OF_FREEDOM = 10
 
@@ -345,7 +346,7 @@ def get_strip_distribution(pixel_number, pixel_list, nside, num_pixels):
     return get_sky_distribution(pixel_list[strip]), len(strip)
 
 
-def get_ring_distribution(pixel_number, pixel_list, nside, num_pixels):
+def get_disc_distribution(pixel_number, pixel_list, nside, ang):
     """
     Computes the distribution of energies and weights in a circular ring around a given pixel
     on a HEALPix skymap.
@@ -368,16 +369,17 @@ def get_ring_distribution(pixel_number, pixel_list, nside, num_pixels):
     vec = hp.pix2vec(nside, pixel_number)
     
     # Calculate the angular size of a pixel in radians
-    d_theta = np.sqrt(hp.nside2pixarea(nside))
-    
+    # d_theta = np.sqrt(hp.nside2pixarea(nside))
+    disc_radius = ang * math.pi / 180
+
     # Generate a circular ring of pixels around the central pixel
-    particle_ring = hp.query_disc(nside, vec, num_pixels * d_theta)
+    particle_disc = hp.query_disc(nside, vec, disc_radius, inclusive=True)
     
     # Get the energy and weight distribution of the pixels in the ring
-    return get_sky_distribution(pixel_list[particle_ring]), len(particle_ring)
+    return get_sky_distribution(pixel_list[particle_disc]), len(particle_disc)
 
 
-def get_off_pixels_distribution(pixel_number, pixel_list, nside, num_pixels):
+def get_off_pixels_distribution(pixel_number, pixel_list, nside, ang):
     """
     Computes the distribution of energies and weights in the OFF region,
     defined as the entire skymap excluding a disc around the ON pixel.
@@ -398,11 +400,12 @@ def get_off_pixels_distribution(pixel_number, pixel_list, nside, num_pixels):
     vec = hp.pix2vec(nside, pixel_number)
     
     # Angular size of the ON region (as a disc)
-    d_theta = np.sqrt(hp.nside2pixarea(nside))  # radians per pixel
-    disc_radius = num_pixels * d_theta
+    # d_theta = np.sqrt(hp.nside2pixarea(nside))  # radians per pixel
+    # disc_radius = num_pixels * d_theta
+    disc_radius = ang * math.pi / 180
     
     # Find pixels inside the ON region disc
-    on_pixels = hp.query_disc(nside, vec, disc_radius)
+    on_pixels = hp.query_disc(nside, vec, disc_radius, inclusive=True)
     
     # All pixels in the skymap
     all_pixels = np.arange(len(pixel_list))
@@ -532,7 +535,7 @@ def perform_test_weights_v3(particles, limits, width, dof=10):
     return chi2sum
 
 # Performs chi2 calculation using the whole skymap minus the ON part for the OFF region
-def perform_chi2(particles, limits, width, dof=10):
+def perform_chi2(particles, limits, ang, dof=10):
     """
     Computes Chi² for all pixels in the skymap using strip and ring distributions.
     
@@ -555,9 +558,9 @@ def perform_chi2(particles, limits, width, dof=10):
 
     chi2sum = []
     for i in tqdm(range(npix)):
-        off_pixels_distribution, _ = get_off_pixels_distribution(i, particles, nside, width)
+        off_pixels_distribution, _ = get_off_pixels_distribution(i, particles, nside, ang)
         off_pixels_distribution = impose_energy_range(off_pixels_distribution, lower, upper)
-        pixel_distribution, _ = get_ring_distribution(i, particles, nside, width)
+        pixel_distribution, _ = get_disc_distribution(i, particles, nside, ang)
         pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
         chi2 = test_weights_v3(pixel_distribution[0], off_pixels_distribution[0],
                                pixel_distribution[1], off_pixels_distribution[1], dof)
@@ -641,8 +644,9 @@ def test_weights_v3(data1, data2, wei1, wei2, dof=10):
         return np.nan
 
     # Compute the Chi² sum over valid bins
-    chi2sum = np.sum(np.square(Wi_on[mask] - Wi_off[mask]) / di2[mask])
-    # chi2sum = np.sum(Wi_on[mask])
+    # chi2sum = np.sum(np.square(Wi_on[mask] - Wi_off[mask]) / di2[mask])
+    chi2sum = np.sum(Wi_on[mask])
+    # chi2sum_red = chi2sum / (len(ebins)-1)
 
     return chi2sum
 
@@ -836,7 +840,7 @@ if particles is not None:
     
     # Perform the Chi² test using the perform_test_weights_v3 function
     # The test uses an energy range of [0.1, 100] and a strip width of 1 pixels
-    chi2_result = perform_chi2(particles, [100, 100000], 4, 10)
+    chi2_result = perform_chi2(particles, [100, 100000], 5, 10) # arguments: data, energy range, angular radius, dof
     
     # Rotate the Chi² map to equatorial coordinates
     #chi2_result = rotate_map(chi2_result)
@@ -856,12 +860,12 @@ if particles is not None:
 
     # Save chi2 data
     maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-    np.savez_compressed(maps_dir + "chi2fullmap_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside16_pix4_dof10_gaussian_diff-ord-3TeV.npz", chi_squared=chi2_result)
+    np.savez_compressed(maps_dir + "Wionfullmap_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside16_ang5_dof10_gaussian_diff-ord-3TeV.npz", chi_squared=chi2_result)
 
-    plot_chi_squared(chi2_result, file_plot_dir, 'chi2fullmap_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_pix4_dof10_gaussian_diff-ord-3TeV')
+    plot_chi_squared(chi2_result, file_plot_dir, 'Wionfullmap_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_ang5_dof10_gaussian_diff-ord-3TeV')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2_result, file_plot_dir + 'chi2fullmap_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_pix4_dof10_gaussian_diff-ord-3TeV.png',10)
+    chi2_pdf_plot(chi2_result, file_plot_dir + 'Wionfullmap_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_ang5_dof10_gaussian_diff-ord-3TeV.png',10)
 
 else:
     print("Data loading failed.")
