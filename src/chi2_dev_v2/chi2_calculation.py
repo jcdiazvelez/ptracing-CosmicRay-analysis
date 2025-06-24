@@ -28,8 +28,6 @@ from tqdm import tqdm
 import gc
 import math
 
-DEGREES_OF_FREEDOM = 10
-
 # Improved data loading function
 def load_data(file_path):
     """
@@ -102,145 +100,6 @@ def weight_powerlaw(x, x_min, x_max, g, power):
     # Calculate the weight using a power-law function and normalize by the PDF
     return x ** g / powerlaw_pdf(x, x_min, x_max, power)
 
-
-def generate_log_uniform_data(low, high, sample_size):
-    """
-    Generates random data following a log-uniform (logarithmically uniform) distribution.
-    
-    Parameters:
-    - low (float): The lower bound of the distribution (must be > 0).
-    - high (float): The upper bound of the distribution.
-    - sample_size (int): The number of random samples to generate.
-    
-    Returns:
-    - ndarray: An array of random samples distributed logarithmically between low and high.
-    
-    This function is useful for scenarios where the data spans several orders of magnitude,
-    ensuring a uniform distribution in the logarithmic scale.
-    """
-    
-    # Check if the lower bound is valid (must be greater than 0)
-    if low <= 0:
-        raise ValueError("low limit must be higher than 0")
-    
-    # Convert the bounds to the logarithmic scale (base 10)
-    log_low = np.log10(low)
-    log_high = np.log10(high)
-    
-    # Generate uniform samples in the logarithmic space
-    log_data = np.random.uniform(log_low, log_high, sample_size)
-    
-    # Transform the samples back to the original scale using 10^x
-    data = np.power(10, log_data)
-    
-    return data
-
-def generate_normal_weights(mean, std_dev, sample_size):
-    """
-    Generates normalized weights from a normal (Gaussian) distribution.
-    
-    Parameters:
-    - mean (float): The mean of the normal distribution.
-    - std_dev (float): The standard deviation of the normal distribution.
-    - sample_size (int): The number of random weights to generate.
-    
-    Returns:
-    - ndarray: An array of normalized weights ranging between 0 and 1.
-    
-    The function ensures the generated weights are scaled to a [0, 1] range, 
-    which is useful for scenarios where normalized weights are required.
-    """
-    
-    # Generate random weights from a normal distribution
-    weights = np.random.normal(mean, std_dev, sample_size)
-    
-    # Normalize the weights to the range [0, 1] if possible
-    if np.max(weights) > np.min(weights):
-        normalized_weights = (weights - np.min(weights)) / (np.max(weights) - np.min(weights))
-    else:
-        # If all weights are the same, return the original array (avoids division by zero)
-        normalized_weights = weights
-    
-    return normalized_weights
-
-
-# Improved plot function with log-log scaling for energy and weight distributions
-def plot_energy_histogram(energies, filename="energy_histogram.png"):
-    """
-    Plots a histogram of energy distribution and saves the figure.
-    Filters near-zero values to avoid log(0) issues.
-    
-    Parameters:
-    - energies: array with energy values.
-    - filename: name of the file where the figure will be saved (default: 'energy_histogram.png').
-    """
-    energies = energies[energies > 0]  # Filter to avoid log(0)
-
-    plt.figure(figsize=(6, 5))
-
-    # Histogram for energies
-    plt.hist(energies.flatten(), bins=DEGREES_OF_FREEDOM+1, log=True)
-    plt.title('Energy Distribution')
-    plt.xlabel('Energy')
-    plt.ylabel('Frequency of events')
-
-    plt.tight_layout()
-    
-    # Save the figure
-    plt.savefig(filename, dpi=300, bbox_inches='tight')  
-    plt.show()
-
-
-# Chi² calculation with control for memory
-def generic_shuffle_test(particles, limits, width, ndist):
-    """
-    Performs a Chi² test with a shuffle approach and adjusts energy limits.
-    
-    Parameters:
-    - particles: array of particles (energies and weights).
-    - limits: energy limits [min, max].
-    - width: width to define neighboring pixels in the skymap.
-    - ndist: number of distributions to process.
-    
-    Returns:
-    - List of calculated Chi² values.
-    """
-    c = 299792458
-    e = 1.60217663 * 10 ** (-19)
-    m_p = 1.67262192 * 10 ** (-27)
-    npix = len(particles)
-    nside = hp.npix2nside(npix)
-
-    # Adjusted limits for momentum
-    lower = limits[0] / (m_p * c * c / (e * 10 ** 12))
-    upper = limits[1] / (m_p * c * c / (e * 10 ** 12))
-
-    ext_boundary_dist = []
-    for i in tqdm(range(ndist)):
-        pixel_distribution, _ = get_ring_distribution(i, particles, nside, width)
-        pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
-        ext_boundary_dist.append(pixel_distribution)
-
-    # Shuffle the list directly instead of duplicating it
-    np.random.shuffle(ext_boundary_dist)
-
-    # Optimized Chi² calculation with memory release
-    chi2_concat = []
-    for i in range(ndist):
-        data1 = ext_boundary_dist[i][0]
-        wei1 = ext_boundary_dist[i][1]
-
-        random_index = np.random.randint(ndist)
-        data2 = ext_boundary_dist[random_index][0]
-        wei2 = ext_boundary_dist[random_index][1]
-
-        chi2 = test_weights_v3(data1, data2, wei1, wei2, 10)
-        chi2_concat.append(chi2)
-
-    del ext_boundary_dist  # Free memory immediately after use
-    gc.collect()  # Explicit memory release
-
-    return chi2_concat
 
 # Utility functions for skymap data manipulation
 def get_pixel_distribution(pixel):
@@ -372,11 +231,11 @@ def get_disc_distribution(pixel_number, pixel_list, nside, ang):
     # d_theta = np.sqrt(hp.nside2pixarea(nside))
     disc_radius = ang * math.pi / 180
 
-    # Generate a circular ring of pixels around the central pixel
-    particle_disc = hp.query_disc(nside, vec, disc_radius, inclusive=True)
+    # Generate a circular disc of pixels around the central pixel
+    pixel_disc = hp.query_disc(nside, vec, disc_radius, inclusive=True)
     
     # Get the energy and weight distribution of the pixels in the ring
-    return get_sky_distribution(pixel_list[particle_disc]), len(particle_disc)
+    return get_sky_distribution(pixel_list[pixel_disc]), len(pixel_disc)
 
 
 def get_off_pixels_distribution(pixel_number, pixel_list, nside, ang):
@@ -499,16 +358,15 @@ def chi2_pdf_plot(chi2_concat, save_path=None, dof=10):
         plt.show()
 
 
-
 # perform_test_weights_v3 function
-def perform_test_weights_v3(particles, limits, width, dof=10):
+def perform_test_weights_v3(particles, limits, ang, dof=10):
     """
     Computes Chi² for all pixels in the skymap using strip and ring distributions.
     
     Parameters:
     - particles: 3D array of particles in each skymap pixel.
     - limits: energy limits [min, max].
-    - width: width for defining strip and ring areas.
+    - ang: angular radius.
     
     Returns:
     - List of calculated Chi² values for each pixel.
@@ -525,9 +383,9 @@ def perform_test_weights_v3(particles, limits, width, dof=10):
     chi2sum = []
     for i in tqdm(range(npix)):
         # print('PIXEL', i)
-        strip_distribution, _ = get_strip_distribution(i, particles, nside, width)
+        strip_distribution, _ = get_strip_distribution(i, particles, nside, ang)
         strip_distribution = impose_energy_range(strip_distribution, lower, upper)
-        pixel_distribution, _ = get_ring_distribution(i, particles, nside, width)
+        pixel_distribution, _ = get_ring_distribution(i, particles, nside, ang)
         pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
         chi2 = test_weights_v3(pixel_distribution[0], strip_distribution[0],
                                pixel_distribution[1], strip_distribution[1], dof)
@@ -542,19 +400,17 @@ def perform_chi2(particles, limits, ang, dof=10):
     Parameters:
     - particles: 3D array of particles in each skymap pixel.
     - limits: energy limits [min, max].
-    - width: width for defining strip and ring areas.
+    - ang: angular radius.
     
     Returns:
     - List of calculated Chi² values for each pixel.
     """
-    c = 299792458
-    e = 1.60217663 * 10 ** (-19)
-    m_p = 1.67262192 * 10 ** (-27)
+
     npix = len(particles)
     nside = hp.npix2nside(npix)
 
-    lower = limits[0] #/ (m_p * c * c / (e * 10 ** 12))
-    upper = limits[1] #/ (m_p * c * c / (e * 10 ** 12))
+    lower = limits[0] 
+    upper = limits[1] 
 
     chi2sum = []
     for i in tqdm(range(npix)):
@@ -566,6 +422,39 @@ def perform_chi2(particles, limits, ang, dof=10):
                                pixel_distribution[1], off_pixels_distribution[1], dof)
         chi2sum.append(chi2)
     return chi2sum
+
+# Performs the relative intensity map
+def perform_Chi2_and_Rint(particles, limits, ang, dof=10):
+    """
+    Computes relative intenstity map for all pixels in the skymap.
+    
+    Parameters:
+    - particles: 3D array of particles in each skymap pixel.
+    - limits: energy limits [min, max].
+    - ang: angular radius.
+    
+    Returns:
+    - List of calculated relative intensity values for each pixel.
+    """
+
+    npix = len(particles)
+    nside = hp.npix2nside(npix)
+
+    lower = limits[0] 
+    upper = limits[1]
+
+    Relint = []
+    chi2sum = []
+    for i in tqdm(range(npix)):
+        off_pixels_distribution, npix2 = get_off_pixels_distribution(i, particles, nside, ang)
+        off_pixels_distribution = impose_energy_range(off_pixels_distribution, lower, upper)
+        pixel_distribution, npix1 = get_disc_distribution(i, particles, nside, ang)
+        pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
+        chi2, Rint = chi2_and_rint_map(pixel_distribution[0], off_pixels_distribution[0],
+                               pixel_distribution[1], off_pixels_distribution[1], npix1, npix2, dof)
+        chi2sum.append(chi2)
+        Relint.append(Rint)
+    return chi2sum, Relint
 
 # Function to compute observational weights for particles based on a Gaussian distribution
 def observational_weight(particle_energy, obs_parameters):
@@ -592,7 +481,7 @@ def test_weights_v3(data1, data2, wei1, wei2, dof=10):
     Parameters:
     - data1, data2 (array-like): Arrays of energy values from two distributions to compare.
     - wei1, wei2 (array-like): Corresponding weights for data1 and data2.
-    - dof (int): Degrees of freedom used to determine the number of histogram bins (default 40).
+    - dof (int): Degrees of freedom used to determine the number of histogram bins (default 10).
 
     Returns:
     - float: The Chi² sum based on valid weighted histogram comparison, or NaN if no valid bins.
@@ -605,14 +494,12 @@ def test_weights_v3(data1, data2, wei1, wei2, dof=10):
     ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
 
     # Normalize weights and apply observational correction
-    wei1 = wei1 * observational_weight(data1, [0.25, 3e3])
-    wei2 = wei2 * observational_weight(data2, [0.25, 3e3])
+    wei1 = wei1 * observational_weight(data1, [0.25, 7e3])
+    wei2 = wei2 * observational_weight(data2, [0.25, 7e3])
     norm1 = np.sum(wei1)
     norm2 = np.sum(wei2)
     wei1_norm = (wei1 / norm1)
     wei2_norm = (wei2 / norm2)
-    # wei1_norm = (wei1 / norm1) * observational_weight(data1, [0.25, 3e3])
-    # wei2_norm = (wei2 / norm2) * observational_weight(data2, [0.25, 3e3])
 
     # Compute raw (unweighted) histograms to assess population per bin
     N_on, _ = np.histogram(data1, bins=ebins)
@@ -644,11 +531,77 @@ def test_weights_v3(data1, data2, wei1, wei2, dof=10):
         return np.nan
 
     # Compute the Chi² sum over valid bins
-    # chi2sum = np.sum(np.square(Wi_on[mask] - Wi_off[mask]) / di2[mask])
-    chi2sum = np.sum(Wi_on[mask])
-    # chi2sum_red = chi2sum / (len(ebins)-1)
+    chi2sum = np.sum(np.square(Wi_on[mask] - Wi_off[mask]) / di2[mask])
+    # chi2sum = np.sum(Wi_on[mask])
+    chi2sum_red = chi2sum / (len(ebins)-1)
 
-    return chi2sum
+    return chi2sum_red
+
+def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10):
+    """
+    Computes the Chi² statistic for comparing two weighted histograms of energy distributions and the relative intensity map.
+
+    Parameters:
+    - data1, data2 (array-like): Arrays of energy values from two distributions to compare.
+    - wei1, wei2 (array-like): Corresponding weights for data1 and data2.
+    - dof (int): Degrees of freedom used to determine the number of histogram bins (default 10).
+
+    Returns:
+    - float: The Chi² sum based on valid weighted histogram comparison, or NaN if no valid bins.
+    """
+
+    # Determine log-scaled energy bin edges based on min/max across both datasets
+    min_val = min(np.min(data1), np.min(data2))
+    max_val = max(np.max(data1), np.max(data2))
+    bins_count = dof + 1
+    ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
+
+    # Normalize weights and apply observational correction
+    wei1 = wei1 * observational_weight(data1, [0.25, 7e3])
+    wei2 = wei2 * observational_weight(data2, [0.25, 7e3])
+    norm1 = np.sum(wei1)
+    norm2 = np.sum(wei2)
+    wei1_norm = (wei1 / norm1)
+    wei2_norm = (wei2 / norm2)
+
+    # Compute raw (unweighted) histograms to assess population per bin
+    N_on, _ = np.histogram(data1, bins=ebins)
+    N_off, _ = np.histogram(data2, bins=ebins)
+
+    # Compute weighted histograms and squared weights
+    Wi_on, _ = np.histogram(data1, bins=ebins, weights=wei1_norm)
+    S2i_on, _ = np.histogram(data1, bins=ebins, weights=np.square(wei1_norm))
+    Wi_off, _ = np.histogram(data2, bins=ebins, weights=wei2_norm)
+    S2i_off, _ = np.histogram(data2, bins=ebins, weights=np.square(wei2_norm))
+
+    # Compute variance per bin using weighted uncertainty formula
+    valid = (Wi_on > 0) & (Wi_off > 0)
+    di2 = np.full_like(Wi_on, np.inf, dtype=np.float64)
+    di2[valid] = Wi_off[valid] * (
+        S2i_on[valid] / Wi_on[valid] + S2i_off[valid] / Wi_off[valid]
+    )
+
+    # Select only bins that meet statistical requirements
+    mask = np.logical_and.reduce([
+        N_on > 20,             # Sufficient counts in distribution 1
+        N_off > 20,            # Sufficient counts in distribution 2
+        di2 > 0,               # Non-zero variance
+        np.isfinite(di2)       # Exclude NaN or Inf
+    ])
+
+    if np.sum(mask) == 0:
+        print("Warning: No bins meet the minimum statistical criteria.")
+        return np.nan
+
+    # Compute the Chi² sum over valid bins
+    chi2sum = np.sum(np.square(Wi_on[mask] - Wi_off[mask]) / di2[mask])
+    # chi2sum = np.sum(Wi_on[mask])
+    chi2sum_red = chi2sum / (len(ebins)-1)
+
+    # Compute the relative intensity
+    Rint = (norm1/norm2) * (npix2/npix1) - 1
+
+    return chi2sum_red, Rint
 
 def plot_skymap(skymap, title, proj='C', label='', filename=None, 
                 thresh=None, dMin=None, dMax=None, sun=None):
@@ -826,7 +779,7 @@ particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/parti
 particles = load_data(particles_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16.npz")
 
 # Define the output directory for plots and results
-file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/Avance_VII/'
+file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_june_2025/'
 
 # Check if particle data was loaded successfully
 if particles is not None:
@@ -839,33 +792,31 @@ if particles is not None:
     # plot_energy_weight_histograms(energies, weights)
     
     # Perform the Chi² test using the perform_test_weights_v3 function
-    # The test uses an energy range of [0.1, 100] and a strip width of 1 pixels
-    chi2_result = perform_chi2(particles, [100, 100000], 5, 10) # arguments: data, energy range, angular radius, dof
+    #chi2_result = perform_chi2(particles, [0.1e3, 100e3], 5, 10) # arguments: data, energy range, angular radius, dof
+
+    # Chi2 and Relative intensity maps
+    mean_gauss = np.log10(7e3)
+    sigma = 0.25
+    low_limit = mean_gauss - 3*sigma
+    up_limit = mean_gauss + 3*sigma
+    en_low_limit = 10**low_limit
+    en_up_limit = 10**up_limit
+    print("low and high energy limits", en_low_limit, en_up_limit)
+    chi2, Rint = perform_Chi2_and_Rint(particles, [en_low_limit, en_up_limit], 5, 10)
     
     # Rotate the Chi² map to equatorial coordinates
     #chi2_result = rotate_map(chi2_result)
-    
-    # Save the rotated Chi² map to a compressed .npz file (optional)
-    # np.savez_compressed('/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/' + 
-    #                     'Wion-sum_nside=16_bins=120_pwrind=-1_pix=1_real-mapping_energy-5-30' + 
-    #                     ".npz", chi2=chi2_result)
-    
-    # Plot the Chi² skymap and save the image to the specified directory
-    # valid_pixels = ~np.isnan(chi2_result)
-    # print("Valid number of pixels:", np.sum(valid_pixels), "of", chi2_result.size)
 
-    # if np.isnan(chi2_result).any():
-    #     print("Warning: Chi2 result contains NaN values. They will be masked in the map.")
-    #     chi2_result = np.nan_to_num(chi2_result, nan=0.0, posinf=0.0, neginf=0.0)
-
-    # Save chi2 data
+    # Save data
     maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-    np.savez_compressed(maps_dir + "Wionfullmap_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside16_ang5_dof10_gaussian_diff-ord-3TeV.npz", chi_squared=chi2_result)
+    np.savez_compressed(maps_dir + "Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.npz", chi_squared=chi2)
+    np.savez_compressed(maps_dir + "Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.npz", chi_squared=Rint)
 
-    plot_chi_squared(chi2_result, file_plot_dir, 'Wionfullmap_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_ang5_dof10_gaussian_diff-ord-3TeV')
+    plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV')
+    plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2_result, file_plot_dir + 'Wionfullmap_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside16_ang5_dof10_gaussian_diff-ord-3TeV.png',10)
+    chi2_pdf_plot(chi2, file_plot_dir + 'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.png',10)
 
 else:
     print("Data loading failed.")
