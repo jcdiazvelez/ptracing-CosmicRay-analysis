@@ -557,8 +557,8 @@ def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10):
     ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
 
     # Normalize weights and apply observational correction
-    wei1 = wei1 * observational_weight(data1, [0.25, 7e3])
-    wei2 = wei2 * observational_weight(data2, [0.25, 7e3])
+    wei1 = wei1 * observational_weight(data1, [0.25, 12e3])
+    wei2 = wei2 * observational_weight(data2, [0.25, 12e3])
     norm1 = np.sum(wei1)
     norm2 = np.sum(wei2)
     wei1_norm = (wei1 / norm1)
@@ -795,7 +795,7 @@ if particles is not None:
     #chi2_result = perform_chi2(particles, [0.1e3, 100e3], 5, 10) # arguments: data, energy range, angular radius, dof
 
     # Chi2 and Relative intensity maps
-    mean_gauss = np.log10(7e3)
+    mean_gauss = np.log10(12e3)
     sigma = 0.25
     low_limit = mean_gauss - 3*sigma
     up_limit = mean_gauss + 3*sigma
@@ -809,14 +809,14 @@ if particles is not None:
 
     # Save data
     maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-    np.savez_compressed(maps_dir + "Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.npz", chi_squared=chi2)
-    np.savez_compressed(maps_dir + "Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.npz", chi_squared=Rint)
+    np.savez_compressed(maps_dir + "Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV.npz", chi_squared=chi2)
+    np.savez_compressed(maps_dir + "Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV.npz", chi_squared=Rint)
 
-    plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV')
-    plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV')
+    plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV')
+    plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2, file_plot_dir + 'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.png',10)
+    chi2_pdf_plot(chi2, file_plot_dir + 'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV.png',10)
 
 else:
     print("Data loading failed.")
