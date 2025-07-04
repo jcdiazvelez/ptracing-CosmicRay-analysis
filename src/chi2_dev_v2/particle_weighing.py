@@ -121,7 +121,8 @@ def compute_particle_weights(nside, bins, imposed_parameters, physical_index, pa
 
         imposed_weight = 1.0 + imposed_parameters[1] * cos_dipole_f(nside, final_pixel, bx, by, bz)
         direction_weight = final_maps[p_bin, final_pixel] if 0 <= p_bin < bins else 0
-        momentum_weight = weight_powerlaw(p, energy_bins[0], energy_bins[-1], physical_index, -1)
+        # momentum_weight = weight_powerlaw(p, energy_bins[0], energy_bins[-1], physical_index, -1)
+        momentum_weight = 1.0
 
         total_weight = momentum_weight * imposed_weight * direction_weight
         reweighed_particles[initial_pixel].append([p, total_weight])  # Store final weight
@@ -142,7 +143,7 @@ def save_results(reweighed_particles_array, output_file):
 
 particle_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/"
 particle_file = "eq_coord_norm_nside=16.npz"
-output_file = particle_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16.npz"
+output_file = particle_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16_woMomwei.npz"
 
 # Execute function and save results
 result = compute_particle_weights(16, 120, [1.0, 0.001], -2.6, particle_dir, particle_file, output_file)
