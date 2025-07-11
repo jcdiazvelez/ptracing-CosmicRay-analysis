@@ -132,7 +132,7 @@ def plot_skymap(skymap, title, proj='C', label='', filename=None,
         fig.savefig(filename, dpi=250)
         plt.close(fig)  # Free memory by closing the figure
 
-def plot_chi_squared(chi_squared_map, out_dir, name, proj='C'):
+def plot_chi_squared(chi_squared_map, out_dir, name, proj='C', label="Rango de χ²"):
     """
     Plots a skymap of Chi² values using the Mollweide projection.
     
@@ -146,18 +146,19 @@ def plot_chi_squared(chi_squared_map, out_dir, name, proj='C'):
     """
     
     chi2sum = chi_squared_map
+    chi2sum = hp.smoothing(chi2sum, fwhm=np.radians(10.0))
     
     # Print the maximum and minimum Chi² values along with their labels
     print('chi2sum[np.argmax(chi2sum)] ' + name, chi2sum[np.argmax(chi2sum)])
     print('chi2sum[np.argmin(chi2sum)] ' + name, chi2sum[np.argmin(chi2sum)])
     
     # Prepare data for plotting by taking the absolute values of Chi²
-    z_values = np.abs(chi2sum)
+    # z_values = np.abs(chi2sum)
     
     # Generate the skymap visualization
     plot_skymap(chi2sum,
                 title=None,
-                label="Rango de χ²",
+                label=label,
                 proj=proj,
                 # dMin=0.0,
                 # dMax=400.0,
@@ -170,8 +171,25 @@ def plot_chi_squared(chi_squared_map, out_dir, name, proj='C'):
     plt.close()
 
 # Define the output directory for plots and results
-file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/Inv-Cien-AvanceII-Mayo-2025/figs/'
-file_maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/Inv-Cien-AvanceII-Mayo-2025/maps/AvanceII/'
-chi2sum = load_chi2_from_npz(file_maps_dir+"Wion_realmap_pwrind-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV.npz", key="chi_squared")
-plot_chi_squared(chi2sum, file_plot_dir, 'Wion_skymap_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV', 'C')
-chi2_pdf_plot(chi2sum,file_plot_dir+'Wion_pdf_real-mapping_pwrind=-2p6_all-wei_eq_coord_norm_nside32_pix1_dof10_gaussian-3TeV.png',10)
+file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_june_2025/'
+file_maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
+# chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei.npz", key="chi_squared")
+# Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei.npz", key="chi_squared")
+# chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.npz", key="chi_squared")
+# Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.npz", key="chi_squared")
+chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", key="chi_squared")
+Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", key="chi_squared")
+# chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV.npz", key="chi_squared")
+# Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV.npz", key="chi_squared")
+# plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_smooth_10', 'C', "χ² reducido")
+# plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_smooth_10', 'C', "")
+# chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_smooth_10.png',10)
+# plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV_woAbs_smooth_10', 'C', "χ² reducido")
+# plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV_woAbs_smooth_10', 'C', "")
+# chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV_woAbs_smooth_10.png',10)
+plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10', 'C', "χ² reducido")
+plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10', 'C', "")
+chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10.png',10)
+# plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV_woAbs_smooth_10', 'C', "χ² reducido")
+# plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV_woAbs_smooth_10', 'C', "")
+# chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV_woAbs_smooth_10.png',10)

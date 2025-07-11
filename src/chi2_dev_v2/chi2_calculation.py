@@ -557,8 +557,8 @@ def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10):
     ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
 
     # Normalize weights and apply observational correction
-    # wei1 = wei1 * observational_weight(data1, [0.25, 12e3])
-    # wei2 = wei2 * observational_weight(data2, [0.25, 12e3])
+    wei1 = wei1 * observational_weight(data1, [0.25, 10e3])
+    wei2 = wei2 * observational_weight(data2, [0.25, 10e3])
     norm1 = np.sum(wei1)
     norm2 = np.sum(wei2)
     wei1_norm = (wei1 / norm1)
@@ -688,18 +688,19 @@ def plot_chi_squared(chi_squared_map, out_dir, name):
     """
     
     chi2sum = chi_squared_map
+    chi2sum = hp.smoothing(chi2sum, fwhm=np.radians(10.0))
     
     # Print the maximum and minimum Chi² values along with their labels
     print('chi2sum[np.argmax(chi2sum)] ' + name, chi2sum[np.argmax(chi2sum)])
     print('chi2sum[np.argmin(chi2sum)] ' + name, chi2sum[np.argmin(chi2sum)])
     
     # Prepare data for plotting by taking the absolute values of Chi²
-    z_values = np.abs(chi2sum)
+    # z_values = np.abs(chi2sum)
     
     # Generate the skymap visualization
-    plot_skymap(z_values,
+    plot_skymap(chi2sum,
                 title=None,
-                label="Rango de χ²",
+                label="χ² reducido",
                 proj='C',
                 dMin=chi2sum[np.argmin(chi2sum)],
                 dMax=chi2sum[np.argmax(chi2sum)],
@@ -780,7 +781,7 @@ def rotate_map(old_map):
 particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/'
 
 # Load the particle data using the improved load_data function
-particles = load_data(particles_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16_woMomwei.npz")
+particles = load_data(particles_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16.npz")
 
 # Define the output directory for plots and results
 file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_june_2025/'
@@ -799,14 +800,14 @@ if particles is not None:
     #chi2_result = perform_chi2(particles, [0.1e3, 100e3], 5, 10) # arguments: data, energy range, angular radius, dof
 
     # Chi2 and Relative intensity maps
-    mean_gauss = np.log10(12e3)
+    mean_gauss = np.log10(10e3)
     sigma = 0.25
     low_limit = mean_gauss - 3*sigma
     up_limit = mean_gauss + 3*sigma
-    # en_low_limit = 10**low_limit
-    # en_up_limit = 10**up_limit
-    en_low_limit = 10e3
-    en_up_limit = 20e3
+    en_low_limit = 10**low_limit
+    en_up_limit = 10**up_limit
+    # en_low_limit = 10e3
+    # en_up_limit = 20e3
     print("low and high energy limits", en_low_limit, en_up_limit)
     chi2, Rint = perform_Chi2_and_Rint(particles, [en_low_limit, en_up_limit], 5, 10)
     
@@ -815,14 +816,14 @@ if particles is not None:
 
     # Save data
     maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-    np.savez_compressed(maps_dir + "Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei.npz", chi_squared=chi2)
-    np.savez_compressed(maps_dir + "Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei.npz", chi_squared=Rint)
+    np.savez_compressed(maps_dir + "Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", chi_squared=chi2)
+    np.savez_compressed(maps_dir + "Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", chi_squared=Rint)
 
-    plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei')
-    plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei')
+    plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10')
+    plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2, file_plot_dir + 'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei.png',10)
+    chi2_pdf_plot(chi2, file_plot_dir + 'CChi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10.png',10)
 
 else:
     print("Data loading failed.")
