@@ -273,7 +273,8 @@ def get_off_pixels_distribution(pixel_number, pixel_list, nside, ang):
     off_pixels = np.setdiff1d(all_pixels, on_pixels)
     
     # Get the energy and weight distribution of the OFF region
-    return get_sky_distribution(pixel_list[off_pixels]), len(off_pixels)
+    # return get_sky_distribution(pixel_list[off_pixels]), len(off_pixels)
+    return get_sky_distribution(pixel_list[all_pixels]), len(all_pixels)
 
 
 
@@ -456,6 +457,34 @@ def perform_Chi2_and_Rint(particles, limits, ang, dof=10):
         Relint.append(Rint)
     return chi2sum, Relint
 
+# Performs the wion distribution
+def perform_wion_dist(particles, limits, ang, dof=10):
+    """
+    Computes relative intenstity map for all pixels in the skymap.
+    
+    Parameters:
+    - particles: 3D array of particles in each skymap pixel.
+    - limits: energy limits [min, max].
+    - ang: angular radius.
+    
+    Returns:
+    - List of calculated relative intensity values for each pixel.
+    """
+
+    npix = len(particles)
+    nside = hp.npix2nside(npix)
+
+    lower = limits[0] 
+    upper = limits[1]
+
+    wionsum = []
+    for i in tqdm(range(npix)):
+        pixel_distribution, npix = get_disc_distribution(i, particles, nside, ang)
+        pixel_distribution = impose_energy_range(pixel_distribution, lower, upper)
+        wion = wion_map(pixel_distribution[0], pixel_distribution[1], dof)
+        wionsum.append(wion)
+    return wionsum
+
 # Function to compute observational weights for particles based on a Gaussian distribution
 def observational_weight(particle_energy, obs_parameters):
     if obs_parameters[0] == -1 and obs_parameters[1] == -1:
@@ -557,8 +586,8 @@ def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10):
     ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
 
     # Normalize weights and apply observational correction
-    wei1 = wei1 * observational_weight(data1, [0.25, 10e3])
-    wei2 = wei2 * observational_weight(data2, [0.25, 10e3])
+    wei1 = wei1 * observational_weight(data1, [0.25, 7e3])
+    wei2 = wei2 * observational_weight(data2, [0.25, 7e3])
     norm1 = np.sum(wei1)
     norm2 = np.sum(wei2)
     wei1_norm = (wei1 / norm1)
@@ -599,13 +628,39 @@ def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10):
     chi2sum_red = chi2sum / (len(ebins)-1)
 
     # Compute the relative intensity
-    # print('norm1', norm1)
-    # print('norm2', norm2)
-    # print('npix1', npix1)
-    # print('npix2', npix2)
     Rint = (norm1/norm2) * (npix2/npix1) - 1
 
     return chi2sum_red, Rint
+
+def wion_map(data, wei, dof=10):
+    """
+    Parameters:
+    - data (array-like): Arrays of energy values from two distributions to compare.
+    - wei (array-like): Corresponding weights for data1 and data2.
+    - dof (int): Degrees of freedom used to determine the number of histogram bins (default 10).
+
+    Returns:
+    - float: The Wion distribution.
+    """
+
+    # Determine log-scaled energy bin edges based on min/max across both datasets
+    min_val = np.min(data)
+    max_val = np.max(data)
+    bins_count = dof + 1
+    ebins = np.logspace(np.log10(min_val), np.log10(max_val), bins_count)
+
+    # Normalize weights
+    wei = wei * observational_weight(data, [0.25, 10e3])
+    norm = np.sum(wei)
+    wei_norm = (wei / norm)
+
+    # Compute weighted histograms
+    Wi_on, _ = np.histogram(data, bins=ebins, weights=wei_norm)
+
+    # Compute the wion sum over all bins
+    wionsum = np.sum(Wi_on)
+
+    return wionsum
 
 def plot_skymap(skymap, title, proj='C', label='', filename=None, 
                 thresh=None, dMin=None, dMax=None, sun=None):
@@ -688,7 +743,7 @@ def plot_chi_squared(chi_squared_map, out_dir, name):
     """
     
     chi2sum = chi_squared_map
-    chi2sum = hp.smoothing(chi2sum, fwhm=np.radians(10.0))
+    # chi2sum = hp.smoothing(chi2sum, fwhm=np.radians(10.0))
     
     # Print the maximum and minimum Chi² values along with their labels
     print('chi2sum[np.argmax(chi2sum)] ' + name, chi2sum[np.argmax(chi2sum)])
@@ -700,7 +755,7 @@ def plot_chi_squared(chi_squared_map, out_dir, name):
     # Generate the skymap visualization
     plot_skymap(chi2sum,
                 title=None,
-                label="χ² reducido",
+                label="χ²/v",
                 proj='C',
                 dMin=chi2sum[np.argmin(chi2sum)],
                 dMax=chi2sum[np.argmax(chi2sum)],
@@ -784,23 +839,23 @@ particles_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/parti
 particles = load_data(particles_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16.npz")
 
 # Define the output directory for plots and results
-file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_june_2025/'
+file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_july_2025/'
 
 # Check if particle data was loaded successfully
 if particles is not None:
     
     # Separate the loaded data into energy and weight arrays
-    energies = particles[:, :, 0]  # Extract energies from the first element of each pair
-    weights = particles[:, :, 1]   # Extract weights from the second element of each pair
+    # energies = particles[:, :, 0]  # Extract energies from the first element of each pair
+    # weights = particles[:, :, 1]   # Extract weights from the second element of each pair
     
     # Optionally generate and save histograms of energies and weights
     # plot_energy_weight_histograms(energies, weights)
     
     # Perform the Chi² test using the perform_test_weights_v3 function
-    #chi2_result = perform_chi2(particles, [0.1e3, 100e3], 5, 10) # arguments: data, energy range, angular radius, dof
+    # chi2_result = perform_chi2(particles, [0.1e3, 100e3], 5, 10) # arguments: data, energy range, angular radius, dof
 
     # Chi2 and Relative intensity maps
-    mean_gauss = np.log10(10e3)
+    mean_gauss = np.log10(7e3)
     sigma = 0.25
     low_limit = mean_gauss - 3*sigma
     up_limit = mean_gauss + 3*sigma
@@ -808,22 +863,26 @@ if particles is not None:
     en_up_limit = 10**up_limit
     # en_low_limit = 10e3
     # en_up_limit = 20e3
-    print("low and high energy limits", en_low_limit, en_up_limit)
+    # print("low and high energy limits", en_low_limit, en_up_limit)
     chi2, Rint = perform_Chi2_and_Rint(particles, [en_low_limit, en_up_limit], 5, 10)
+
+    # wion distribution maps
+    # wion = perform_wion_dist(particles, [en_low_limit, en_up_limit], 5, 10)
     
     # Rotate the Chi² map to equatorial coordinates
     #chi2_result = rotate_map(chi2_result)
 
     # Save data
     maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
-    np.savez_compressed(maps_dir + "Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", chi_squared=chi2)
-    np.savez_compressed(maps_dir + "Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", chi_squared=Rint)
+    # np.savez_compressed(maps_dir + "wion_allwei_n16_ang5_dof10.npz", wion=wion)
+    np.savez_compressed(maps_dir + "Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_newOFFdist.npz", chi_squared=chi2)
+    np.savez_compressed(maps_dir + "Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_newOFFdist.npz", chi_squared=Rint)
 
-    plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10')
-    plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10')
+    # plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_dipAmp0p0')
+    # plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_dipAmp0p0')
     
     # Generate and display the Chi² Probability Density Function (PDF) plot
-    chi2_pdf_plot(chi2, file_plot_dir + 'CChi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10.png',10)
+    # chi2_pdf_plot(chi2, file_plot_dir + 'CChi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_dipAmp0p0.png',10)
 
 else:
     print("Data loading failed.")

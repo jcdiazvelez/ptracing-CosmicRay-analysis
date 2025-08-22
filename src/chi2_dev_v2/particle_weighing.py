@@ -68,6 +68,7 @@ def compute_particle_weights(nside, bins, imposed_parameters, physical_index, pa
         print(f"Error: {e}")
         return 2 
 
+    # print("imposed parameters", imposed_parameters[1])
     particles = particles_data['particles']  # Extract particle data
     npix = hp.nside2npix(nside)  # Compute total number of pixels
 
@@ -117,12 +118,15 @@ def compute_particle_weights(nside, bins, imposed_parameters, physical_index, pa
         # The directional components of B-field
         # The assumption is that B at final radius is constant
         bx, by, bz = item[3], item[4], item[5]  
+        # print("bx, by, bz, b", bx, by, bz, np.sqrt(bx**2+by**2+bz**2))
         p_bin = np.digitize(p, energy_bins) - 1  # Determine which energy bin the particle falls into
 
         imposed_weight = 1.0 + imposed_parameters[1] * cos_dipole_f(nside, final_pixel, bx, by, bz)
         direction_weight = final_maps[p_bin, final_pixel] if 0 <= p_bin < bins else 0
-        # momentum_weight = weight_powerlaw(p, energy_bins[0], energy_bins[-1], physical_index, -1)
-        momentum_weight = 1.0
+        momentum_weight = weight_powerlaw(p, energy_bins[0], energy_bins[-1], physical_index, -1)
+        # imposed_weight = 1.0
+        # momentum_weight = 1.0
+        # direction_weight = 1.0
 
         total_weight = momentum_weight * imposed_weight * direction_weight
         reweighed_particles[initial_pixel].append([p, total_weight])  # Store final weight
@@ -143,8 +147,9 @@ def save_results(reweighed_particles_array, output_file):
 
 particle_dir = "/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/particles/"
 particle_file = "eq_coord_norm_nside=16.npz"
-output_file = particle_dir+"real_mapping_phyind-2p6_all-weights_eq_coord_norm_nside=16_woMomwei.npz"
+output_file = particle_dir+"outer_dist_allwei_nside=16.npz"
 
 # Execute function and save results
+# result = compute_particle_weights(16, 120, [1.0, 0.0], -2.6, particle_dir, particle_file, output_file)
 result = compute_particle_weights(16, 120, [1.0, 0.001], -2.6, particle_dir, particle_file, output_file)
 save_results(result, output_file)

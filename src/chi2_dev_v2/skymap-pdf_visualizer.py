@@ -12,6 +12,14 @@ def load_chi2_from_npz(file_path, key="chi_squared"):
         return data[key]
     else:
         raise KeyError(f"Key '{key}' not found in {file_path}")
+
+def load_from_npz(file_path, key="particles"):
+    data = np.load(file_path)
+    print("Keys in file:", data.files)
+    if key in data:
+        return data[key]
+    else:
+        raise KeyError(f"Key '{key}' not found in {file_path}")
     
 # Chi² PDF plot function
 def chi2_pdf_plot(chi2_concat, save_path=None, dof=10):
@@ -132,7 +140,7 @@ def plot_skymap(skymap, title, proj='C', label='', filename=None,
         fig.savefig(filename, dpi=250)
         plt.close(fig)  # Free memory by closing the figure
 
-def plot_chi_squared(chi_squared_map, out_dir, name, proj='C', label="Rango de χ²"):
+def plot_chi_squared(chi_squared_map, out_dir, name, proj='C', label="χ²/v"):
     """
     Plots a skymap of Chi² values using the Mollweide projection.
     
@@ -146,7 +154,7 @@ def plot_chi_squared(chi_squared_map, out_dir, name, proj='C', label="Rango de �
     """
     
     chi2sum = chi_squared_map
-    chi2sum = hp.smoothing(chi2sum, fwhm=np.radians(10.0))
+    # chi2sum = hp.smoothing(chi2sum, fwhm=np.radians(10.0))
     
     # Print the maximum and minimum Chi² values along with their labels
     print('chi2sum[np.argmax(chi2sum)] ' + name, chi2sum[np.argmax(chi2sum)])
@@ -160,36 +168,83 @@ def plot_chi_squared(chi_squared_map, out_dir, name, proj='C', label="Rango de �
                 title=None,
                 label=label,
                 proj=proj,
-                # dMin=0.0,
-                # dMax=400.0,
                 dMin=chi2sum[np.argmin(chi2sum)],
-                # dMax=300.0,
                 dMax=chi2sum[np.argmax(chi2sum)],
                 filename=out_dir + name)
     
     # Close the plot to free memory
     plt.close()
 
-# Define the output directory for plots and results
-file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_june_2025/'
+def plot_distribution(wion, out_dir, name, proj='C', label=''):
+    """
+    Plots a skymap of distributions using the Mollweide projection.
+    
+    Parameters:
+    - particles (ndarray): Array of distribution for each pixel in the skymap.
+    - out_dir (str): Directory path where the plot image will be saved.
+    - name (str): Name of the output file (without extension).
+    
+    This function visualizes the distribution over the sky, highlighting 
+    regions with the highest and lowest values.
+    """
+    
+    # Print the maximum and minimum Chi² values along with their labels
+    print('max limit ' + name, wion[np.argmax(wion)])
+    print('min limit' + name, wion[np.argmin(wion)])
+    
+    # Prepare data for plotting by taking the absolute values of Chi²
+    # z_values = np.abs(chi2sum)
+
+    # wion = hp.smoothing(wion, fwhm=np.radians(10.0))
+    # Generate the skymap visualization
+    plot_skymap(wion,
+                title=None,
+                label=label,
+                proj=proj,
+                dMin=wion[np.argmin(wion)],
+                dMax=wion[np.argmax(wion)],
+                filename=out_dir + name)
+    
+    # Close the plot to free memory
+    plt.close()
+
+# Define the input/output directory for plots and results
+file_plot_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/figs/results_july_2025/'
 file_maps_dir = '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/'
+
+# chi2 and relative intensity skymaps
+chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_newOFFdist.npz", key="chi_squared")
+Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_newOFFdist.npz", key="chi_squared")
 # chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei.npz", key="chi_squared")
 # Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei.npz", key="chi_squared")
+# chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_dipAmp0p0.npz", key="chi_squared")
+# Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_dipAmp0p0.npz", key="chi_squared")
 # chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.npz", key="chi_squared")
 # Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV.npz", key="chi_squared")
-chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", key="chi_squared")
-Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", key="chi_squared")
+# chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", key="chi_squared")
+# Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV.npz", key="chi_squared")
 # chi2 = load_chi2_from_npz(file_maps_dir+"Chi2_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV.npz", key="chi_squared")
 # Rint = load_chi2_from_npz(file_maps_dir+"Rint_realmap_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV.npz", key="chi_squared")
+plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_newOFFdist', 'C', "χ²/v")
+plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_newOFFdist', 'C', "")
 # plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_smooth_10', 'C', "χ² reducido")
 # plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_smooth_10', 'C', "")
 # chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_smooth_10.png',10)
+# plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_dipAmp0p0', 'C', "χ² reducido")
+# plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_dipAmp0p0', 'C', "")
+# chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_woMomwei-and-obswei_woAbs_dipAmp0p0.png',10)
 # plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV_woAbs_smooth_10', 'C', "χ² reducido")
 # plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV_woAbs_smooth_10', 'C', "")
 # chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-7TeV_woAbs_smooth_10.png',10)
-plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10', 'C', "χ² reducido")
-plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10', 'C', "")
-chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10.png',10)
+# plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10', 'C', "χ² reducido")
+# plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10', 'C', "")
+# chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-10TeV_woAbs_smooth_10.png',10)
 # plot_chi_squared(chi2, file_plot_dir, 'Chi2_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV_woAbs_smooth_10', 'C', "χ² reducido")
 # plot_chi_squared(Rint, file_plot_dir, 'Rint_skymap_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV_woAbs_smooth_10', 'C', "")
 # chi2_pdf_plot(chi2,file_plot_dir+'Chi2andRint_pdf_real-mapping_pwrind-2p6_all-wei_n16_ang5_dof10_gauss-12TeV_woAbs_smooth_10.png',10)
+
+# outer radius energy distribution skymaps
+# wion = load_from_npz(file_maps_dir+"wion_n16_ang5_dof10.npz", 'wion')
+# plot_distribution(wion, file_plot_dir, 'wion_skymap_noWeights_n16_ang5_dof10_smooth2', 'C', 'Rango pesos')
+wion = load_from_npz(file_maps_dir+"wion_allwei_n16_ang5_dof10.npz", 'wion')
+plot_distribution(wion, file_plot_dir, 'wion_skymap_allWeights_n16_ang5_dof10', 'C', 'Rango pesos')
