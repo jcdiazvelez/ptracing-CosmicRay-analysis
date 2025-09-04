@@ -180,3 +180,10 @@ prefix = 'eq_coord_nside=' + str(nside)
 output_name = args.output + prefix
 print("saving %s" % output_name)
 np.savez_compressed(output_name, particles=direction_data)
+
+#python particle_gen.py \
+#  -p ../../data/raw/ \
+#  -o ../../data/particles/ \
+#  -N 16 \
+#  -r 50000 \
+#  -t 8

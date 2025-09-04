@@ -233,3 +233,12 @@ if __name__ == "__main__":
         logger.info("Processing completed successfully.")
     else:
         logger.error("Processing failed.")
+
+# python particle_weighing.py \
+#     -p ../../data/particles/eq_coord_nside=16.npz \
+#     -o ../../data/particles/weights_nside=16.npz \
+#     -N 16 \
+#     -b 120 \
+#     -i -2.6 \
+#     --imposed 1.0 0.01 \
+#     --progress --verbose

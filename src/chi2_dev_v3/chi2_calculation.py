@@ -224,3 +224,10 @@ if __name__ == "__main__":
     np.savez_compressed(f"{args.output}/Chi2_map.npz", chi_squared=chi2)
     np.savez_compressed(f"{args.output}/Rint_map.npz", relative_intensity=Rint)
     logger.info(f"Saved Chi² and Rint maps to {args.output}")
+
+# python chi2_calculation.py \
+#     -i ../../data/particles/weights_nside=16.npz \
+#     -o ../../data/maps/ \
+#     -a 5 \
+#     -d 10 \
+#     --progress --verbose
