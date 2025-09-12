@@ -86,7 +86,7 @@ def observational_weight(particle_energy, obs_parameters):
 # -------------------------------------------------------------------
 # Core processing function
 # -------------------------------------------------------------------
-def compute_particle_weights(nside, bins, imposed_parameters, physical_index,
+def compute_particle_weights(nside, bins, imposed_parameters, physical_index, energy,
                              particle_file, progress=False):
     """
     Process particle file and compute weights.
@@ -101,6 +101,8 @@ def compute_particle_weights(nside, bins, imposed_parameters, physical_index,
         Parameters for imposed weights.
     physical_index : float
         Power-law index for physical distribution.
+    energy_range : float
+        Energy range.
     particle_file : str
         Input .npz file with particle data.
     progress : bool
@@ -125,8 +127,11 @@ def compute_particle_weights(nside, bins, imposed_parameters, physical_index,
 
     # Extract particle energies and build logarithmic bins
     energies = particles[:, 2]
-    energy_bins = np.logspace(np.log10(min(energies)), np.log10(max(energies)), bins + 1)
-    logger.info(f"Energy range: {min(energies):.2e} – {max(energies):.2e} eV")
+    #energy_bins = np.logspace(np.log10(min(energies)), np.log10(max(energies)), bins + 1)
+    energy_bins = np.logspace(np.log10(energy[0]), np.log10(energy[1]), bins + 1)
+    print('Imposed energy range', energy[0], energy[1])
+    print('Max energy range', min(energies), max(energies))
+    logger.info(f"Max energy range: {min(energies):.2e} – {max(energies):.2e} GeV")
 
     # Initialize storage
     final_maps = np.zeros((bins, npix))
@@ -211,7 +216,9 @@ if __name__ == "__main__":
                         help="Number of logarithmic energy bins")
     parser.add_argument("-i", "--index", type=float, default=-2.6,
                         help="Physical power-law index")
-    parser.add_argument("--imposed", nargs=2, type=float, default=[1.0, 0.0],
+    parser.add_argument("-e", "--energy", nargs=2, type=float, default=[6e3, 18e3],
+                        help="Energy range")
+    parser.add_argument("--imposed", nargs=2, type=float, default=[1.0, 0.001],
                         metavar=("UNIFORM", "DIPOLE"),
                         help="Imposed weight parameters: uniform, dipole factor")
     parser.add_argument("--progress", action="store_true",
@@ -226,7 +233,7 @@ if __name__ == "__main__":
 
     # Compute weights
     result = compute_particle_weights(args.nside, args.bins, args.imposed,
-                                      args.index, args.particles, progress=args.progress)
+                                      args.index, args.energy, args.particles, progress=args.progress)
 
     if result is not None:
         save_results(result, args.output)
@@ -236,9 +243,11 @@ if __name__ == "__main__":
 
 # python particle_weighing.py \
 #     -p ../../data/particles/eq_coord_nside=16.npz \
-#     -o ../../data/particles/weights_nside=16.npz \
+#     -o ../../data/particles/weights_nside=16_newPlan.npz \
 #     -N 16 \
 #     -b 120 \
 #     -i -2.6 \
+#     -e 6e3 18e3 \
 #     --imposed 1.0 0.01 \
 #     --progress --verbose
+

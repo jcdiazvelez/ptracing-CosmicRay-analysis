@@ -108,8 +108,8 @@ def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10):
     ebins = np.logspace(np.log10(min_val), np.log10(max_val), dof + 1)
 
     # Apply observational weights
-    wei1 = wei1 * observational_weight(data1, [0.25, 7e3])
-    wei2 = wei2 * observational_weight(data2, [0.25, 7e3])
+    # wei1 = wei1 * observational_weight(data1, [0.25, 7e3])
+    # wei2 = wei2 * observational_weight(data2, [0.25, 7e3])
     norm1, norm2 = np.sum(wei1), np.sum(wei2)
     wei1 /= norm1
     wei2 /= norm2
@@ -131,9 +131,10 @@ def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10):
     if np.sum(mask) == 0:
         return np.nan, np.nan
 
-    chi2_red = np.sum((Wi_on[mask] - Wi_off[mask])**2 / di2[mask]) / (len(ebins) - 1)
+    #chi2_red = np.sum((Wi_on[mask] - Wi_off[mask])**2 / di2[mask]) / (len(ebins) - 1)
     Rint = (norm1 / norm2) * (npix2 / npix1) - 1
-    return chi2_red, Rint
+    #return chi2_red, Rint
+    return Rint
 
 
 def perform_Chi2_and_Rint(particles, limits, ang, dof=10, progress=False):
@@ -148,10 +149,12 @@ def perform_Chi2_and_Rint(particles, limits, ang, dof=10, progress=False):
         on_dist, npix1 = get_disc_distribution(i, particles, nside, ang)
         off_dist = impose_energy_range(off_dist, limits[0], limits[1])
         on_dist = impose_energy_range(on_dist, limits[0], limits[1])
-        chi2, rint = chi2_and_rint_map(on_dist[0], off_dist[0], on_dist[1], off_dist[1], npix1, npix2, dof)
-        chi2sum.append(chi2)
+        #chi2, rint = chi2_and_rint_map(on_dist[0], off_dist[0], on_dist[1], off_dist[1], npix1, npix2, dof)
+        rint = chi2_and_rint_map(on_dist[0], off_dist[0], on_dist[1], off_dist[1], npix1, npix2, dof)
+        #chi2sum.append(chi2)
         Rint.append(rint)
-    return np.array(chi2sum), np.array(Rint)
+    #return np.array(chi2sum), np.array(Rint)
+    return np.array(Rint)
 
 
 # -------------------------------------------------------------------
@@ -218,16 +221,18 @@ if __name__ == "__main__":
     limits = [10**(mean_gauss - 3*sigma), 10**(mean_gauss + 3*sigma)]
 
     # Compute Chi² and Rint maps
-    chi2, Rint = perform_Chi2_and_Rint(particles, limits, args.ang, args.dof, progress=args.progress)
+    #chi2, Rint = perform_Chi2_and_Rint(particles, limits, args.ang, args.dof, progress=args.progress)
+    Rint = perform_Chi2_and_Rint(particles, limits, args.ang, args.dof, progress=args.progress)
 
     # Save results
-    np.savez_compressed(f"{args.output}/Chi2_map.npz", chi_squared=chi2)
-    np.savez_compressed(f"{args.output}/Rint_map.npz", relative_intensity=Rint)
+    #np.savez_compressed(f"{args.output}/newPlan_Chi2_map.npz", chi_squared=chi2)
+    np.savez_compressed(f"{args.output}/newPlan_Rint_map.npz", relative_intensity=Rint)
     logger.info(f"Saved Chi² and Rint maps to {args.output}")
 
 # python chi2_calculation.py \
-#     -i ../../data/particles/weights_nside=16.npz \
+#     -i ../../data/particles/newPlan_weights_nside=16.npz \
 #     -o ../../data/maps/ \
 #     -a 5 \
 #     -d 10 \
 #     --progress --verbose
+

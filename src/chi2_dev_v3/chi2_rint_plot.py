@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 """
-chi2_plot.py
+chi2_rint_plot.py
 
-Script to visualize Chi2 and Rint maps produced by chi2_calculation.py.
-Generates Healpy sky maps and a Chi2 vs Rint scatter plot.
+Script to visualize Rint (and optionally Chi2) maps produced by chi2_calculation.py.
+Supports both .npy and .npz inputs.
 
-Usage:
-    python chi2_plot.py \
-        -c ../../data/chi2/Chi2_map.npy \
-        -r ../../data/chi2/Rint_map.npy \
+Includes option for projection/rotation.
+
+Usage examples:
+    # Only Rint map, default projection
+    python chi2_rint_plot.py \
+        -r ../../data/chi2/Rint_map.npz \
         -o ../../figures/chi2_plots/
+
+    # Rint + Chi2 with custom rotation
+    python chi2_rint_plot.py \
+        -c ../../data/chi2/Chi2_map.npz \
+        -r ../../data/chi2/Rint_map.npz \
+        -o ../../figures/chi2_plots/ \
+        --proj "45,0,0"
 """
 
 import os
@@ -18,71 +27,125 @@ import numpy as np
 import healpy as hp
 import matplotlib.pyplot as plt
 
+
 # =========================
-# Helper function to save mollview plots
+# Helper functions
 # =========================
-def plot_healpy_map(data, title, outfile, unit=""):
+def load_map(path, key=None):
     """
-    Plot a Healpy Mollweide map and save as PNG.
+    Load a map from .npy or .npz file.
+    If .npz, use the given key or fall back to the first array.
     """
+    if path.endswith(".npz"):
+        data = np.load(path)
+        if key and key in data:
+            return data[key]
+        else:
+            first_key = list(data.keys())[0]
+            print(f"[INFO] Using key '{first_key}' from {path}")
+            return data[first_key]
+    else:
+        return np.load(path)
+
+
+def parse_rotation(proj):
+    """
+    Convert projection option into a Healpy rotation tuple.
+    - 'C0' → (0, 0, 0)
+    - 'C'  → (-180, 0, 0)
+    - Custom string 'lon,lat,psi' → tuple(float)
+    """
+    if proj == "C0":
+        return (0, 0, 0)
+    elif proj == "C":
+        return (-180, 0, 0)
+    else:
+        try:
+            return tuple(map(float, proj.split(",")))
+        except Exception:
+            raise ValueError(f"Invalid proj argument: {proj}")
+
+
+def plot_healpy_map(data, title, outfile, unit="", rotation=(0, 0, 0)):
+    """
+    Plot a Healpy Mollweide map with optional rotation and save as PNG.
+    """
+    fig = plt.figure()
     hp.mollview(
         data,
         title=title,
         unit=unit,
-        cmap="viridis",
+        cmap="coolwarm",
         norm="hist",
-        cbar=True
+        cbar=True,
+        rot=rotation,
+        margins=(0.0, 0.03, 0.0, 0.13),  # space for colorbar
+        notext=False,
+        fig=fig.number
     )
     hp.graticule()
-    plt.savefig(outfile, dpi=300, bbox_inches="tight")
-    plt.close()
+    fig.savefig(outfile, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
 
 # =========================
 # Main
 # =========================
 def main():
-    parser = argparse.ArgumentParser(description="Plot Chi2 and Rint maps")
-    parser.add_argument("-c", "--chi2", required=True,
-                        help="Path to Chi2_map.npy")
+    parser = argparse.ArgumentParser(description="Plot Chi2 and/or Rint maps")
+    parser.add_argument("-c", "--chi2", required=False,
+                        help="Path to Chi2_map file (.npy or .npz)")
     parser.add_argument("-r", "--rint", required=True,
-                        help="Path to Rint_map.npy")
+                        help="Path to Rint_map file (.npy or .npz)")
     parser.add_argument("-o", "--output", required=True,
                         help="Output directory for plots")
+    parser.add_argument("--proj", type=str, default="C0",
+                        help="Projection/rotation (options: 'C0', 'C', or 'lon,lat,psi')")
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
+    saved_files = []
 
-    # Load maps
-    chi2_map = np.load(args.chi2)
-    rint_map = np.load(args.rint)
-
-    # =========================
-    # Plot Chi2 map
-    # =========================
-    chi2_out = os.path.join(args.output, "Chi2_map.png")
-    plot_healpy_map(chi2_map, "Chi2 Map", chi2_out, unit="Chi2")
+    # Determine rotation
+    rotation = parse_rotation(args.proj)
+    print(f"[INFO] Using rotation {rotation}")
 
     # =========================
     # Plot Rint map
     # =========================
+    rint_map = load_map(args.rint, key="relative_intensity")
+    print(f"[DEBUG] Loaded Rint_map from {args.rint}")
+    print("  shape:", rint_map.shape)
+    print("  min:", np.nanmin(rint_map))
+    print("  max:", np.nanmax(rint_map))
+    print("  mean:", np.nanmean(rint_map))
+
     rint_out = os.path.join(args.output, "Rint_map.png")
-    plot_healpy_map(rint_map, "Rint Map", rint_out, unit="Rint")
+    plot_healpy_map(rint_map, "Rint Map", rint_out, unit="Rint", rotation=rotation)
+    saved_files.append(rint_out)
 
     # =========================
-    # Scatter plot Chi2 vs Rint
+    # Plot Chi2 map (if provided)
     # =========================
-    scatter_out = os.path.join(args.output, "Chi2_vs_Rint.png")
-    plt.figure(figsize=(6, 5))
-    plt.scatter(rint_map, chi2_map, alpha=0.6, s=10, c="blue")
-    plt.xlabel("Rint")
-    plt.ylabel("Chi2")
-    plt.title("Chi2 vs Rint")
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(scatter_out, dpi=300)
-    plt.close()
+    if args.chi2:
+        chi2_map = load_map(args.chi2, key="chi2_map")
+        print(f"[DEBUG] Loaded Chi2_map from {args.chi2}")
+        print("  shape:", chi2_map.shape)
+        print("  min:", np.nanmin(chi2_map))
+        print("  max:", np.nanmax(chi2_map))
+        print("  mean:", np.nanmean(chi2_map))
 
-    print(f"Plots saved to {args.output}")
+        chi2_out = os.path.join(args.output, "Chi2_map.png")
+        plot_healpy_map(chi2_map, "Chi2 Map", chi2_out, unit="Chi2", rotation=rotation)
+        saved_files.append(chi2_out)
+
+    print(f"[INFO] Saved plots: {saved_files}")
+
 
 if __name__ == "__main__":
     main()
+
+# python chi2_rint_plot.py 
+# -r '/home/aamarinp/Documents/ptracing-CosmicRay-analysis/data/maps/newPlan_Rint_map.npz' 
+# -o '../../figs/results_sept_2025/' 
+# --proj C
