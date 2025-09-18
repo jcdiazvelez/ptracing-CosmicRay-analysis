@@ -120,7 +120,8 @@ def main():
     print("  max:", np.nanmax(rint_map))
     print("  mean:", np.nanmean(rint_map))
 
-    rint_out = os.path.join(args.output, "Rint_map.png")
+    rint_out = os.path.join(args.output, "Rint_map_fix_v2
+    .png")
     plot_healpy_map(rint_map, "Rint Map", rint_out, unit="Rint", rotation=rotation)
     saved_files.append(rint_out)
 

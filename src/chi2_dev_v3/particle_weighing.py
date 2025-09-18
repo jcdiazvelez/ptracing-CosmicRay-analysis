@@ -245,7 +245,7 @@ if __name__ == "__main__":
 #     -p ../../data/particles/eq_coord_nside=16.npz \
 #     -o ../../data/particles/weights_nside=16_newPlan.npz \
 #     -N 16 \
-#     -b 120 \
+#     -b 1 \
 #     -i -2.6 \
 #     -e 6e3 18e3 \
 #     --imposed 1.0 0.01 \

@@ -101,11 +101,12 @@ def observational_weight(particle_energy, obs_parameters):
     return np.exp(-0.5 * ((log_e - np.log10(mid)) / sigma) ** 2) / (sigma * np.sqrt(2 * np.pi))
 
 
-def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10):
+def chi2_and_rint_map(data1, data2, wei1, wei2, npix1, npix2, dof=10, limits=[6e3, 18e3]):
     """Compute reduced Chi² and relative intensity."""
-    min_val = min(np.min(data1), np.min(data2))
-    max_val = max(np.max(data1), np.max(data2))
-    ebins = np.logspace(np.log10(min_val), np.log10(max_val), dof + 1)
+    # min_val = min(np.min(data1), np.min(data2))
+    # max_val = max(np.max(data1), np.max(data2))
+    # ebins = np.logspace(np.log10(min_val), np.log10(max_val), dof + 1)
+    ebins = np.logspace(np.log10(limits[0]), np.log10(limits[1]), dof + 1)
 
     # Apply observational weights
     # wei1 = wei1 * observational_weight(data1, [0.25, 7e3])
@@ -150,7 +151,7 @@ def perform_Chi2_and_Rint(particles, limits, ang, dof=10, progress=False):
         off_dist = impose_energy_range(off_dist, limits[0], limits[1])
         on_dist = impose_energy_range(on_dist, limits[0], limits[1])
         #chi2, rint = chi2_and_rint_map(on_dist[0], off_dist[0], on_dist[1], off_dist[1], npix1, npix2, dof)
-        rint = chi2_and_rint_map(on_dist[0], off_dist[0], on_dist[1], off_dist[1], npix1, npix2, dof)
+        rint = chi2_and_rint_map(on_dist[0], off_dist[0], on_dist[1], off_dist[1], npix1, npix2, dof, limits)
         #chi2sum.append(chi2)
         Rint.append(rint)
     #return np.array(chi2sum), np.array(Rint)
@@ -218,7 +219,8 @@ if __name__ == "__main__":
     # Energy limits (Gaussian cut in log10(E))
     sigma = 0.25
     mean_gauss = np.log10(7e3)
-    limits = [10**(mean_gauss - 3*sigma), 10**(mean_gauss + 3*sigma)]
+    #limits = [10**(mean_gauss - 3*sigma), 10**(mean_gauss + 3*sigma)]
+    limits = [6e3, 18e3]
 
     # Compute Chi² and Rint maps
     #chi2, Rint = perform_Chi2_and_Rint(particles, limits, args.ang, args.dof, progress=args.progress)
@@ -226,7 +228,7 @@ if __name__ == "__main__":
 
     # Save results
     #np.savez_compressed(f"{args.output}/newPlan_Chi2_map.npz", chi_squared=chi2)
-    np.savez_compressed(f"{args.output}/newPlan_Rint_map.npz", relative_intensity=Rint)
+    np.savez_compressed(f"{args.output}/newPlan-fix_v2_Rint_map.npz", relative_intensity=Rint)
     logger.info(f"Saved Chi² and Rint maps to {args.output}")
 
 # python chi2_calculation.py \
